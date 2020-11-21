@@ -13,15 +13,16 @@ public class PostVote {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    private int userId;
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User userId;
+
     @Column(name = "post_id")
     private int postId;
+
     private Date time;
+
     private int value;
 
 
