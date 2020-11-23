@@ -16,10 +16,7 @@ public class Tag {
 
     private String name;
 
-    @ManyToMany
-    @JoinTable(name = "tag2post",
-            joinColumns = @JoinColumn(name = "tag_id"),
-            inverseJoinColumns = @JoinColumn(name = "post_id"))
-    private Set<Tag> tags;
+    @OneToMany(mappedBy = "tag")
+    private Set<Tag2Post> tag2Posts;
 
 }

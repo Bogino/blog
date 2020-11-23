@@ -20,6 +20,7 @@ public class Post {
     private int isActive;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_status")
     private ModerationStatus status;
 
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
@@ -34,11 +35,8 @@ public class Post {
 
     private String title;
 
-    @ManyToMany
-    @JoinTable (name="tag2post",
-            joinColumns=@JoinColumn (name="post_id"),
-            inverseJoinColumns=@JoinColumn(name="tag_id"))
-    private Set<Tag> tags;
+    @OneToMany(mappedBy = "post")
+    private Set<Tag2Post> tag2Posts;
 
     private String text;
 
