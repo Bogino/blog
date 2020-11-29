@@ -2,24 +2,34 @@ package main.controller;
 
 import main.api.response.InitResponse;
 import main.api.response.SettingsResponse;
+import main.model.TagRepository;
 import main.service.SettingsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
 @RestController
 @RequestMapping("/api")
 public class ApiGeneralController {
 
-
     private final SettingsService settingsService;
     private final InitResponse initResponse;
 
-    public ApiGeneralController(SettingsService settingsService, InitResponse initResponse) {
+    @Autowired
+    private final TagRepository tagRepository;
+
+    public ApiGeneralController(SettingsService settingsService, InitResponse initResponse, TagRepository tagRepository) {
         this.settingsService = settingsService;
         this.initResponse = initResponse;
+        this.tagRepository = tagRepository;
     }
 
     @GetMapping("/init")
@@ -31,6 +41,20 @@ public class ApiGeneralController {
     private ResponseEntity<SettingsResponse> settings(){
         return new ResponseEntity<>(settingsService.getGlobalSettings(), HttpStatus.OK);
     }
+
+    @GetMapping("/tag")
+    private ResponseEntity<List> tags(){
+        return new ResponseEntity(tagRepository.findAll(), HttpStatus.OK);
+    }
+
+    @RequestMapping(
+            value = "/tag",
+            params = "query",
+            method = GET)
+    private ResponseEntity<List> list(@RequestParam("query") final String query){
+        return new ResponseEntity<>(tagRepository.findByNameContaining(query), HttpStatus.OK);
+    }
+
 
 
 }

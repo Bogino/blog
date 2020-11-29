@@ -18,8 +18,9 @@ public class PostVote {
     @JoinColumn(name = "user_id", nullable = false)
     private User userId;
 
-    @Column(name = "post_id")
-    private int postId;
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post postId;
 
     private Date time;
 
