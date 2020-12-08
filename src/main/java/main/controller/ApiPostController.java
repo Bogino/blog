@@ -4,6 +4,7 @@ import main.model.Post;
 import main.model.PostRepository;
 import main.model.PostVoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
@@ -35,28 +36,43 @@ public class ApiPostController {
     public ApiPostController(PostRepository postRepository, PostVoteRepository postVoteRepository) {
         this.postRepository = postRepository;
         this.postVoteRepository = postVoteRepository;
-        count = postRepository.count();
+
     }
 
     @RequestMapping(
-            params = "mode",
+            params = {"mode", "page"},
             method = GET)
-    private ResponseEntity<List> getPosts(@RequestParam("mode") final String mode) {
+    private ResponseEntity<ArrayList> getPosts(@RequestParam("mode") String mode, @RequestParam("page") int page) {
 
         if (mode.equals("recent")) {
-            Pageable firstPageWithTenElements = PageRequest.of(offset, limit, Sort.by("time").descending());
+            Pageable firstPageWithTenElements = PageRequest.of(page, limit, Sort.by("time").descending());
+            Page<Post> posts = postRepository.findAll(firstPageWithTenElements);
+            count = posts.getTotalElements();
 
-            ArrayList<Post> posts = new ArrayList<>();
-            for (Post post : postRepository.findAll(firstPageWithTenElements)) {
-                if (post.getIsActive() == 1 && post.getStatus().name().equals("ACCEPTED"))
-                    posts.add(post);
-                postVoteRepository.findByPostId(post).stream().forEach(postVote -> System.out.println(post.getTitle() + " - votes: " + postVote.getValue()));
-            }
             if (posts.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-            return new ResponseEntity<>(posts, HttpStatus.OK);
+
+            ArrayList<Post> postList = (ArrayList<Post>) posts.stream().collect(Collectors.toList());
+
+
+            return new ResponseEntity(postList.stream().filter(post -> post.getStatus().name().equals("ACCEPTED")).collect(Collectors.toList()), HttpStatus.OK);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        if (mode.equals("early")) {
+            Pageable firstPageWithTenElements = PageRequest.of(page, limit, Sort.by("time").ascending());
+            Page<Post> posts = postRepository.findAll(firstPageWithTenElements);
+            count = posts.getTotalElements();
+
+            if (posts.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+            ArrayList<Post> postList = (ArrayList<Post>) posts.stream().collect(Collectors.toList());
+
+
+            return new ResponseEntity(postList.stream().filter(post -> post.getStatus().name().equals("ACCEPTED")).collect(Collectors.toList()), HttpStatus.OK);
+        }
+        return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
 }
