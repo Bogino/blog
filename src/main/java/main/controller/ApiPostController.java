@@ -2,6 +2,7 @@ package main.controller;
 
 import main.model.Post;
 import main.model.PostRepository;
+import main.model.PostVote;
 import main.model.PostVoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -70,9 +71,18 @@ public class ApiPostController {
 
             ArrayList<Post> postList = (ArrayList<Post>) posts.stream().collect(Collectors.toList());
 
-
             return new ResponseEntity(postList.stream().filter(post -> post.getStatus().name().equals("ACCEPTED")).collect(Collectors.toList()), HttpStatus.OK);
         }
+
+        if (mode.equals("best")) {
+
+
+        }
+
+        if (mode.equals("popular")) {
+
+        }
+
         return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
 }
