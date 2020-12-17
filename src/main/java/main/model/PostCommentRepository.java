@@ -10,7 +10,8 @@ import java.util.List;
 @Repository
 public interface PostCommentRepository extends JpaRepository<PostVote, Integer> {
 
-    @Query("select p from PostComment p where p.userId = :userId")
-    List<PostComment> findByUserId(@Param("userId") User userId);
+
+    @Query(value = "SELECT COUNT(*) FROM POST_COMMENTS WHERE USER_ID = ?1", nativeQuery = true)
+    int findByUserId(int userId);
 
 }

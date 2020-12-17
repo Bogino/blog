@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface PostVoteRepository extends JpaRepository<PostVote, Integer> {
 
-    @Query("select p from PostVote p where p.postId = :postId")
-    List<PostVote> findByPostId(@Param("postId") Post postId);
+    @Query(value = "select pv from PostVote pv where pv.postId = ?1")
+    List<PostVote> findByPost(Post post);
 
 }
