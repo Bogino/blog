@@ -13,5 +13,13 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query(value = "SELECT * FROM POSTS WHERE IS_ACTIVE = 1 AND MODERATION_STATUS = 'ACCEPTED' ORDER BY TIME ASC", nativeQuery = true)
     Page<Post> getEarlyPosts(Pageable pageable);
 
+//    @Query(value = "SELECT title, COUNT(Post_votes.value) AS likes  FROM Posts \n" +
+//            "JOIN Post_votes ON Post_votes.post_id = Posts.id\n" +
+//            "WHERE value > 0 \n" +
+//            "GROUP BY Posts.title\n" +
+//            "ORDER BY likes DESC;", nativeQuery = true)
+//    Page<Post> getBestPosts(Pageable pageable);
+
+
 
 }

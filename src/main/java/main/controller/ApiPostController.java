@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/post")
@@ -52,26 +51,25 @@ public class ApiPostController {
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
 
-        int page = offset/limit;
+        int page = offset / limit;
 
         if (mode.equals("recent")) {
-            Pageable pageWithTenElements = PageRequest.of(page, limit, Sort.by("time").descending());
+            Pageable pageWithTenElements = PageRequest.of(page, limit);
             Page<Post> posts = postRepository.getRecentPosts(pageWithTenElements);
 
             count = posts.getTotalElements();
-            for (Post p : posts){
+            for (Post p : posts) {
                 int likes = 0;
                 int dislikes = 0;
                 List<PostVote> postVotes = postVoteRepository.findByPost(p);
-                int commentsCount = postCommentRepository.findByUserId(p.getUserId().getId());
-                for (PostVote pv : postVotes){
-                    if (pv.getValue() < 0){
+                int commentsCount = postCommentRepository.findByUserId(p.getId());
+                for (PostVote pv : postVotes) {
+                    if (pv.getValue() < 0) {
                         dislikes++;
-                    }
-                    else likes++;
+                    } else likes++;
                 }
 
-               apiPostResponse.setPosts(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.setPosts(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
             }
 
 
@@ -84,26 +82,93 @@ public class ApiPostController {
         }
 
         if (mode.equals("early")) {
-            Pageable firstPageWithTenElements = PageRequest.of(page, limit, Sort.by("time").ascending());
-            Page<Post> posts = postRepository.getEarlyPosts(firstPageWithTenElements);
+            Pageable pageWithTenElements = PageRequest.of(page, limit);
+            Page<Post> posts = postRepository.getEarlyPosts(pageWithTenElements);
+
             count = posts.getTotalElements();
+            for (Post p : posts) {
+                int likes = 0;
+                int dislikes = 0;
+                List<PostVote> postVotes = postVoteRepository.findByPost(p);
+                int commentsCount = postCommentRepository.findByUserId(p.getId());
+                for (PostVote pv : postVotes) {
+                    if (pv.getValue() < 0) {
+                        dislikes++;
+                    } else likes++;
+                }
+
+                apiPostResponse.setPosts(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+            }
+
 
             if (posts.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
-            ArrayList<Post> postList = (ArrayList<Post>) posts.stream().collect(Collectors.toList());
 
-            return new ResponseEntity(postList.stream().filter(post -> post.getStatus().name().equals("ACCEPTED")).collect(Collectors.toList()), HttpStatus.OK);
+            return new ResponseEntity(apiPostResponse, HttpStatus.OK);
         }
 
         if (mode.equals("best")) {
 
+            Pageable pageWithTenElements = PageRequest.of(page, limit);
+            Page<Post> posts = postRepository.findAll(pageWithTenElements);
+
+            count = posts.getTotalElements();
+            for (Post p : posts) {
+                int likes = 0;
+                int dislikes = 0;
+                List<PostVote> postVotes = postVoteRepository.findByPost(p);
+                int commentsCount = postCommentRepository.findByUserId(p.getId());
+                for (PostVote pv : postVotes) {
+                    if (pv.getValue() < 0) {
+                        dislikes++;
+                    } else likes++;
+                }
+
+                apiPostResponse.setPosts(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+
+            }
+
+
+            if (posts.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+            apiPostResponse.sortPostsByLikes();
+
+            return new ResponseEntity(apiPostResponse, HttpStatus.OK);
 
         }
 
         if (mode.equals("popular")) {
+            Pageable pageWithTenElements = PageRequest.of(page, limit);
+            Page<Post> posts = postRepository.findAll(pageWithTenElements);
 
+            count = posts.getTotalElements();
+            for (Post p : posts) {
+                int likes = 0;
+                int dislikes = 0;
+                List<PostVote> postVotes = postVoteRepository.findByPost(p);
+                int commentsCount = postCommentRepository.findByUserId(p.getId());
+                for (PostVote pv : postVotes) {
+                    if (pv.getValue() < 0) {
+                        dislikes++;
+                    } else likes++;
+                }
+
+                apiPostResponse.setPosts(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+
+            }
+
+
+            if (posts.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+            apiPostResponse.sortPostsByCommentCount();
+
+            return new ResponseEntity(apiPostResponse, HttpStatus.OK);
         }
 
         return new ResponseEntity(HttpStatus.NOT_FOUND);

@@ -26,6 +26,13 @@ public class ApiPostResponse {
         posts.add(postResponse);
 
     }
+    public void sortPostsByLikes(){
+        posts.sort(new LikeComparator());
+    }
+
+    public void sortPostsByCommentCount(){
+        posts.sort(new CommentComparator());
+    }
 
     @Data
     @AllArgsConstructor
@@ -40,6 +47,7 @@ public class ApiPostResponse {
         private int dislikeCount;
         private int commentCount;
         private int viewCount;
+
     }
 
     @Data
