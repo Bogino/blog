@@ -40,5 +40,7 @@ public class Post {
     @Column(name = "view_count")
     private int viewCount;
 
-
+    public void setViewCount(int viewCount) {
+        this.viewCount += viewCount;
+    }
 }

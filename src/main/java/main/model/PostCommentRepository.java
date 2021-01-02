@@ -8,10 +8,13 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PostCommentRepository extends JpaRepository<PostVote, Integer> {
+public interface PostCommentRepository extends JpaRepository<PostComment, Integer> {
 
 
-    @Query(value = "SELECT COUNT(*) FROM POST_COMMENTS WHERE POST_ID = ?1", nativeQuery = true)
-    int findByUserId(int postId);
+    @Query(value = "SELECT COUNT(*) FROM post_comments WHERE post_id = ?1", nativeQuery = true)
+    int getCountCommentsByPostId(int postId);
+
+    @Query(value = "SELECT * FROM post_comments WHERE post_id = ?1", nativeQuery = true)
+    List<PostComment> getCommentsByPostId(int postId);
 
 }

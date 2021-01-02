@@ -18,7 +18,8 @@ public class ApiPostResponse {
         posts = new ArrayList<>();
     }
 
-    public void setPosts (long count, int postId, Date timestamp, int userId, String userName, String title, String announce, int likeCount, int dislikeCount, int commentCount, int viewCount) {
+    public ApiPostResponse (long count, int postId, Date timestamp, int userId, String userName, String title, String announce,
+                          int likeCount, int dislikeCount, int commentCount, int viewCount) {
 
         this.count = count;
         UserIdNameResponse user = new UserIdNameResponse(userId, userName);
