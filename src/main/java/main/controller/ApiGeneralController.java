@@ -7,11 +7,14 @@ import main.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
@@ -55,6 +58,19 @@ public class ApiGeneralController {
         return new ResponseEntity<>(tagRepository.findByNameContaining(query), HttpStatus.OK);
     }
 
+    @PostMapping("/image")
+    private ResponseEntity postImage(File file) {
+
+        try {
+            ImageIO.read(file);
+            Path destination = Paths.get("upload/");
+            Files.copy(file.toPath(), destination.resolve(file.toPath().getFileName()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new ResponseEntity(file.getPath(), HttpStatus.OK);
+    }
 
 
 }
