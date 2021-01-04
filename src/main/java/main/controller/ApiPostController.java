@@ -12,6 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -463,31 +466,32 @@ public class ApiPostController {
 
             apiPostResponseById = new ApiPostResponseById(post.getTime().getTime(), true, post.getUserId().getId(), post.getUserId().getName(),
                     post.getTitle(), post.getText(), likes, dislikes, 1, tags);
-            for (PostComment pc : postCommentRepository.getCommentsByPostId(post.getId())){
+            for (PostComment pc : postCommentRepository.getCommentsByPostId(post.getId())) {
                 apiPostResponseById.addComment(pc.getId(), pc.getTime().getTime(), pc.getText(), pc.getUserId().getId(), pc.getUserId().getName(), pc.getUserId().getPhoto());
             }
             return new ResponseEntity(apiPostResponseById, HttpStatus.OK);
         }
         return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
+
     @PostMapping()
     private Result addPost(
             @RequestParam("timestamp") long timestamp,
             @RequestParam("active") int active,
             @RequestParam("title") String title,
             @RequestParam("tags") String tags,
-            @RequestParam("text") String text){
+            @RequestParam("text") String text) {
 
         Post post = new Post();
         Date date = null;
         Result result = new Result(true);
-        if (Calendar.getInstance().getTime().getTime() < timestamp){
+        if (Calendar.getInstance().getTime().getTime() < timestamp) {
             date = new Date(timestamp);
         }
-        if (Calendar.getInstance().getTime().getTime() > timestamp){
+        if (Calendar.getInstance().getTime().getTime() > timestamp) {
             date = Calendar.getInstance().getTime();
         }
-        if ((title.length() == 0 || title.length() < 3) && (text.length() == 0 || text.length() < 50)){
+        if ((title.length() == 0 || title.length() < 3) && (text.length() == 0 || text.length() < 50)) {
             throw new RuntimeException("Некорректные данные");
         }
         post.setTime(date);
@@ -495,10 +499,23 @@ public class ApiPostController {
         post.setTitle(title);
         post.setText(text);
         post.setStatus(ModerationStatus.valueOf("NEW"));
-        post.setUserId(new User());
         postRepository.save(post);
 
         return result;
+    }
+
+    @PostMapping
+    private ResponseEntity postImage(File file) {
+
+        try {
+            ImageIO.read(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Неверный формат изображения");
+        }
+        file = new File("C:\\Users\\Vladimir\\Desktop\\Диплом\\blog\\upload");
+
+        return new ResponseEntity(file.getPath(), HttpStatus.OK);
     }
 
 
