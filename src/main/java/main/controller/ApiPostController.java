@@ -504,6 +504,20 @@ public class ApiPostController {
         return result;
     }
 
+    @PostMapping
+    private ResponseEntity postImage(File file) {
+
+        try {
+            ImageIO.read(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Неверный формат изображения");
+        }
+        file = new File("C:\\Users\\Vladimir\\Desktop\\Диплом\\blog\\upload");
+
+        return new ResponseEntity(file.getPath(), HttpStatus.OK);
+    }
+
 
 
 }
