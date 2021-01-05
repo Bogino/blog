@@ -36,17 +36,17 @@ public class ApiGeneralController {
     }
 
     @GetMapping("/init")
-    private InitResponse init(){
+    private InitResponse init() {
         return initResponse;
     }
 
     @GetMapping("/settings")
-    private ResponseEntity<SettingsResponse> settings(){
+    private ResponseEntity<SettingsResponse> settings() {
         return new ResponseEntity<>(settingsService.getGlobalSettings(), HttpStatus.OK);
     }
 
     @GetMapping("/tag")
-    private ResponseEntity<List> tags(){
+    private ResponseEntity<List> tags() {
         return new ResponseEntity(tagRepository.findAll(), HttpStatus.OK);
     }
 
@@ -54,7 +54,7 @@ public class ApiGeneralController {
             value = "/tag",
             params = "query",
             method = GET)
-    private ResponseEntity<List> list(@RequestParam("query") final String query){
+    private ResponseEntity<List> list(@RequestParam("query") final String query) {
         return new ResponseEntity<>(tagRepository.findByNameContaining(query), HttpStatus.OK);
     }
 
