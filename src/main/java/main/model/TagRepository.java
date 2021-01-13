@@ -18,5 +18,13 @@ public interface TagRepository extends JpaRepository<Tag, Integer> {
             "WHERE posts.id = ?1", nativeQuery = true)
     List<String> findByPostId(int postId);
 
+    @Query(value = "SELECT * FROM tags\n" +
+            "JOIN tag2post ON tags.id = tag2post.tag_id\n" +
+            "JOIN posts ON posts.id = tag2post.post_id\n" +
+            "GROUP BY tags.name\n" +
+            "ORDER BY COUNT(posts.title) DESC\n" +
+            "LIMIT 1", nativeQuery = true)
+    Tag getTagWithMaxPostsCount();
+
 
 }
