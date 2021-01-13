@@ -33,7 +33,6 @@ public class ApiPostController {
     @Autowired
     private TagRepository tagRepository;
 
-    private ApiPostResponse apiPostResponse;
 
     private ApiPostResponseById apiPostResponseById;
 
@@ -57,8 +56,9 @@ public class ApiPostController {
         if (mode.equals("recent")) {
             Pageable pageWithTenElements = PageRequest.of(page, limit);
             Page<Post> posts = postRepository.getRecentPosts(pageWithTenElements);
-
+            ApiPostResponse apiPostResponse = new ApiPostResponse();
             count = posts.getTotalElements();
+
             for (Post p : posts) {
                 int likes = 0;
                 int dislikes = 0;
@@ -70,7 +70,7 @@ public class ApiPostController {
                     } else likes++;
                 }
 
-                apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
             }
 
 
@@ -85,8 +85,9 @@ public class ApiPostController {
         if (mode.equals("early")) {
             Pageable pageWithTenElements = PageRequest.of(page, limit);
             Page<Post> posts = postRepository.getEarlyPosts(pageWithTenElements);
-
+            ApiPostResponse apiPostResponse = new ApiPostResponse();
             count = posts.getTotalElements();
+
             for (Post p : posts) {
                 int likes = 0;
                 int dislikes = 0;
@@ -98,9 +99,8 @@ public class ApiPostController {
                     } else likes++;
                 }
 
-                apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
             }
-
 
             if (posts.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -113,9 +113,10 @@ public class ApiPostController {
         if (mode.equals("best")) {
 
             Pageable pageWithTenElements = PageRequest.of(page, limit);
-            Page<Post> posts = postRepository.findAll(pageWithTenElements);
-
+            Page<Post> posts = postRepository.getActivePosts("ACCEPTED", pageWithTenElements);
+            ApiPostResponse apiPostResponse = new ApiPostResponse();
             count = posts.getTotalElements();
+
             for (Post p : posts) {
                 int likes = 0;
                 int dislikes = 0;
@@ -127,7 +128,7 @@ public class ApiPostController {
                     } else likes++;
                 }
 
-                apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
 
             }
 
@@ -144,8 +145,8 @@ public class ApiPostController {
 
         if (mode.equals("popular")) {
             Pageable pageWithTenElements = PageRequest.of(page, limit);
-            Page<Post> posts = postRepository.findAll(pageWithTenElements);
-
+            Page<Post> posts = postRepository.getActivePosts("ACCEPTED", pageWithTenElements);
+            ApiPostResponse apiPostResponse = new ApiPostResponse();
             count = posts.getTotalElements();
             for (Post p : posts) {
                 int likes = 0;
@@ -158,10 +159,9 @@ public class ApiPostController {
                     } else likes++;
                 }
 
-                apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
 
             }
-
 
             if (posts.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -185,7 +185,7 @@ public class ApiPostController {
 
         Pageable pageWithTenElements = PageRequest.of(page, limit);
         Page<Post> posts = postRepository.findByTitleContaining(query, pageWithTenElements);
-
+        ApiPostResponse apiPostResponse = new ApiPostResponse();
         count = posts.getTotalElements();
         for (Post p : posts) {
             int likes = 0;
@@ -197,7 +197,7 @@ public class ApiPostController {
                     dislikes++;
                 } else likes++;
             }
-            apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
         }
 
         if (posts.isEmpty()) {
@@ -218,7 +218,7 @@ public class ApiPostController {
 
         Pageable pageWithTenElements = PageRequest.of(page, limit);
         Page<Post> posts = postRepository.findByDate(date, pageWithTenElements);
-
+        ApiPostResponse apiPostResponse = new ApiPostResponse();
         count = posts.getTotalElements();
         for (Post p : posts) {
             int likes = 0;
@@ -230,7 +230,7 @@ public class ApiPostController {
                     dislikes++;
                 } else likes++;
             }
-            apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
         }
 
         if (posts.isEmpty()) {
@@ -253,7 +253,7 @@ public class ApiPostController {
 
         Pageable pageWithTenElements = PageRequest.of(page, limit);
         Page<Post> posts = postRepository.findByTagName(name, pageWithTenElements);
-
+        ApiPostResponse apiPostResponse = new ApiPostResponse();
         count = posts.getTotalElements();
         for (Post p : posts) {
             int likes = 0;
@@ -265,7 +265,7 @@ public class ApiPostController {
                     dislikes++;
                 } else likes++;
             }
-            apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
         }
 
         if (posts.isEmpty()) {
@@ -286,11 +286,10 @@ public class ApiPostController {
         int page = offset / limit;
 
         Pageable pageWithTenElements = PageRequest.of(page, limit);
-
-
         Page<Post> posts = postRepository.getActivePosts(status, pageWithTenElements);
-
+        ApiPostResponse apiPostResponse = new ApiPostResponse();
         count = posts.getTotalElements();
+
         for (Post p : posts) {
             int likes = 0;
             int dislikes = 0;
@@ -301,7 +300,7 @@ public class ApiPostController {
                     dislikes++;
                 } else likes++;
             }
-            apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
         }
 
         if (posts.isEmpty()) {
@@ -323,7 +322,7 @@ public class ApiPostController {
         if (status.equals("inactive")) {
             Pageable pageWithTenElements = PageRequest.of(page, limit);
             Page<Post> posts = postRepository.getInActivePosts(pageWithTenElements);
-
+            ApiPostResponse apiPostResponse = new ApiPostResponse();
             count = posts.getTotalElements();
             for (Post p : posts) {
                 int likes = 0;
@@ -336,7 +335,7 @@ public class ApiPostController {
                     } else likes++;
                 }
 
-                apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
             }
 
 
@@ -351,7 +350,7 @@ public class ApiPostController {
         if (status.equals("pending")) {
             Pageable pageWithTenElements = PageRequest.of(page, limit);
             Page<Post> posts = postRepository.getActivePosts("NEW", pageWithTenElements);
-
+            ApiPostResponse apiPostResponse = new ApiPostResponse();
             count = posts.getTotalElements();
             for (Post p : posts) {
                 int likes = 0;
@@ -364,7 +363,7 @@ public class ApiPostController {
                     } else likes++;
                 }
 
-                apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
             }
 
 
@@ -380,7 +379,7 @@ public class ApiPostController {
 
             Pageable pageWithTenElements = PageRequest.of(page, limit);
             Page<Post> posts = postRepository.getActivePosts("DECLINED", pageWithTenElements);
-
+            ApiPostResponse apiPostResponse = new ApiPostResponse();
             count = posts.getTotalElements();
             for (Post p : posts) {
                 int likes = 0;
@@ -393,7 +392,7 @@ public class ApiPostController {
                     } else likes++;
                 }
 
-                apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
 
             }
 
@@ -409,7 +408,7 @@ public class ApiPostController {
         if (status.equals("published")) {
             Pageable pageWithTenElements = PageRequest.of(page, limit);
             Page<Post> posts = postRepository.getActivePosts("ACCEPTED", pageWithTenElements);
-
+            ApiPostResponse apiPostResponse = new ApiPostResponse();
             count = posts.getTotalElements();
             for (Post p : posts) {
                 int likes = 0;
@@ -422,7 +421,7 @@ public class ApiPostController {
                     } else likes++;
                 }
 
-                apiPostResponse = new ApiPostResponse(count, p.getId(), p.getTime(), p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime()/1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
 
             }
 
@@ -448,7 +447,7 @@ public class ApiPostController {
 
         Post post = optionalPost.get();
 
-        if (post.getIsActive() == 1 && post.getStatus().name() == "ACCEPTED" && post.getTime().getTime() <= Calendar.getInstance().getTime().getTime()) {
+        if (post.getIsActive() == 1 && post.getStatus().name() == "ACCEPTED" && post.getTime().getTime()/1000<= Calendar.getInstance().getTime().getTime()/1000) {
 
             int likes = 0;
             int dislikes = 0;
@@ -461,10 +460,10 @@ public class ApiPostController {
 
             List<String> tags = tagRepository.findByPostId(post.getId());
 
-            apiPostResponseById = new ApiPostResponseById(post.getTime().getTime(), true, post.getUserId().getId(), post.getUserId().getName(),
+            apiPostResponseById = new ApiPostResponseById(post.getTime().getTime()/1000, true, post.getUserId().getId(), post.getUserId().getName(),
                     post.getTitle(), post.getText(), likes, dislikes, 1, tags);
             for (PostComment pc : postCommentRepository.getCommentsByPostId(post.getId())) {
-                apiPostResponseById.addComment(pc.getId(), pc.getTime().getTime(), pc.getText(), pc.getUserId().getId(), pc.getUserId().getName(), pc.getUserId().getPhoto());
+                apiPostResponseById.addComment(pc.getId(), pc.getTime().getTime()/1000, pc.getText(), pc.getUserId().getId(), pc.getUserId().getName(), pc.getUserId().getPhoto());
             }
             return new ResponseEntity(apiPostResponseById, HttpStatus.OK);
         }
@@ -482,10 +481,10 @@ public class ApiPostController {
         Post post = new Post();
         Date date = null;
         Result result = new Result(true);
-        if (Calendar.getInstance().getTime().getTime() < timestamp) {
+        if (Calendar.getInstance().getTime().getTime()/1000 < timestamp) {
             date = new Date(timestamp);
         }
-        if (Calendar.getInstance().getTime().getTime() > timestamp) {
+        if (Calendar.getInstance().getTime().getTime()/1000 > timestamp) {
             date = Calendar.getInstance().getTime();
         }
         if ((title.length() == 0 || title.length() < 3) && (text.length() == 0 || text.length() < 50)) {
