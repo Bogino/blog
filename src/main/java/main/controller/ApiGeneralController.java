@@ -3,10 +3,9 @@ package main.controller;
 import main.api.response.ApiCalendarResponse;
 import main.api.response.ApiTagResponse;
 import main.api.response.InitResponse;
-import main.api.response.SettingsResponse;
-import main.model.PostRepository;
+import main.model.repository.PostRepository;
 import main.model.Tag;
-import main.model.TagRepository;
+import main.model.repository.TagRepository;
 import main.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -57,12 +56,13 @@ public class ApiGeneralController {
     }
 
     @GetMapping("/tag")
-    private ResponseEntity tags() {
+    private ResponseEntity getTags() {
 
         List<Tag> tags = tagRepository.findAll();
         double totalPosts = postRepository.getAllAcceptedPosts().size();
         double countMaxPostsByTag = postRepository.getCountPostsByTagName(tagRepository.getTagWithMaxPostsCount().getName());
-        double factor = 1.0 / countMaxPostsByTag / totalPosts;
+        double weight = countMaxPostsByTag/totalPosts;
+        double factor = 1.0 / weight;
 
         ApiTagResponse apiTagResponse = new ApiTagResponse();
 
@@ -79,13 +79,14 @@ public class ApiGeneralController {
             value = "/tag",
             params = "query",
             method = GET)
-    private ResponseEntity list(String query) {
+    private ResponseEntity getTagsByQuery(String query) {
 
         List<Tag> tags = tagRepository.findByNameContaining(query);
 
         double totalPosts = postRepository.getAllAcceptedPosts().size();
         double countMaxPostsByTag = postRepository.getCountPostsByTagName(tagRepository.getTagWithMaxPostsCount().getName());
-        double factor = 1.0 / countMaxPostsByTag / totalPosts;
+        double weight = countMaxPostsByTag/totalPosts;
+        double factor = 1.0 / weight;
 
         ApiTagResponse apiTagResponse = new ApiTagResponse();
 

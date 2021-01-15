@@ -1,5 +1,7 @@
-package main.model;
+package main.model.repository;
 
+import main.model.Post;
+import main.model.PostVote;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
