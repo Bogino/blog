@@ -17,8 +17,6 @@ insert into tags (name) values("Программрование"), ("Back-end"), 
 
 insert into tag2Post (post_id, tag_id) values(1, 1), (1, 2), (2, 1), (2, 2), (3, 3);
 
-insert into captcha_codes (time, code, secret_code) values(CURRENT_DATE, "123qwe", "777"), (CURRENT_DATE, "dscdscds1212", "732eds77"), (CURRENT_DATE, "123sdcdscqwe", "77dscdscs7");
-
 insert into post_votes (post_id, time, value, user_id) values(1, CURRENT_DATE, 1, 2), (2, CURRENT_DATE, 1, 2), (3, CURRENT_DATE, 1, 2), (4, CURRENT_DATE, 1, 2), (5, CURRENT_DATE, 1, 2),
 (1, CURRENT_DATE, 1, 1), (2, CURRENT_DATE, 1, 1), (3, CURRENT_DATE, 1, 1), (4, CURRENT_DATE, 10, 1), (2, CURRENT_DATE, -1, 3), (6, CURRENT_DATE, -1, 2),
 (6, CURRENT_DATE, -1, 1), (6, CURRENT_DATE, -1, 4), (6, CURRENT_DATE, -1, 5), (6, CURRENT_DATE, -1, 6), (6, CURRENT_DATE, -1, 7), (6, CURRENT_DATE, -1, 8), (6, CURRENT_DATE, -1, 9);

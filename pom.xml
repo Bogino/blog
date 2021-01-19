@@ -77,6 +77,16 @@
             <artifactId>hibernate-core</artifactId>
             <version>5.4.15.Final</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.cage</groupId>
+            <artifactId>cage</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>LATEST</version>
+        </dependency>
     </dependencies>
 
     <build>
