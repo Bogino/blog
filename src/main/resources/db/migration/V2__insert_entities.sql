@@ -15,7 +15,7 @@ insert into post_comments (parent_id, post_id, text, time, user_id) values(NULL,
 
 insert into tags (name) values("Программрование"), ("Back-end"), ("Хавчик");
 
-insert into tag2Post (post_id, tag_id) values(1, 1), (1, 2), (2, 1), (2, 2), (3, 3);
+insert into tag2post (post_id, tag_id) values(1, 1), (1, 2), (2, 1), (2, 2), (3, 3);
 
 insert into post_votes (post_id, time, value, user_id) values(1, CURRENT_DATE, 1, 2), (2, CURRENT_DATE, 1, 2), (3, CURRENT_DATE, 1, 2), (4, CURRENT_DATE, 1, 2), (5, CURRENT_DATE, 1, 2),
 (1, CURRENT_DATE, 1, 1), (2, CURRENT_DATE, 1, 1), (3, CURRENT_DATE, 1, 1), (4, CURRENT_DATE, 10, 1), (2, CURRENT_DATE, -1, 3), (6, CURRENT_DATE, -1, 2),

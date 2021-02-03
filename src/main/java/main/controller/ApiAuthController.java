@@ -2,10 +2,12 @@ package main.controller;
 
 import com.github.cage.Cage;
 import com.github.cage.GCage;
+import main.api.request.RegisterRequest;
 import main.api.response.CaptchaImageResponse;
 import main.api.response.RegistrationErrorResponse;
 import main.api.response.Result;
 import main.model.CaptchaCodes;
+import main.model.User;
 import main.model.repository.CaptchaRepository;
 import main.model.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,10 +41,6 @@ public class ApiAuthController {
         return new ResponseEntity(false, HttpStatus.OK);
     }
 
-//    @PostMapping("/register")
-//    private ResponseEntity register(){
-//
-//    }
 
     @GetMapping("/captcha")
     private ResponseEntity getCaptcha() {
@@ -81,7 +79,8 @@ public class ApiAuthController {
         captcha.setSecretCode(secrete);
         captcha.setTime(new Date());
         captchaRepository.save(captcha);
-        captchaRepository.deleteOldCaptchas();
+
+        //TODO: captchaRepository.deleteOldCaptchas();
 
         CaptchaImageResponse imageResponse = new CaptchaImageResponse(secrete, image);
 
@@ -90,43 +89,50 @@ public class ApiAuthController {
     }
 
     @PostMapping("/register")
-    private ResponseEntity register(@RequestParam("e_mail") String eMail,
-                                    @RequestParam() String password,
-                                    @RequestParam() String name,
-                                    @RequestParam() String captcha,
-                                    @RequestParam("captcha_secrete") String captchaSecrete) {
+    private ResponseEntity register(@RequestBody RegisterRequest request) {
+
         Pattern eMailPattern = Pattern.compile("[a-z0-9]+@[a-z]+\\.[a-z]+");
         Pattern passwordPattern = Pattern.compile(".{6,}");
         Pattern namePattern = Pattern.compile("[a-zA-Zа-яА-Я\\-\\s]+");
         RegistrationErrorResponse errorResponse = new RegistrationErrorResponse();
         Result result = new Result(true);
 
-        if (!eMailPattern.matcher(eMail).matches()) {
+        if (!eMailPattern.matcher(request.getEMail()).matches()) {
             errorResponse.getErrors().put("email", "Некорректное имя e-mail");
         }
-        if (userRepository.findByEmail(eMail).isPresent()) {
+        if (userRepository.findByEmail(request.getEMail()).isPresent()) {
             errorResponse.getErrors().put("email", "Этот e-mail уже зарегистрирован");
         }
-        if (!passwordPattern.matcher(password).matches()) {
+        if (!passwordPattern.matcher(request.getPassword()).matches()) {
             errorResponse.getErrors().put("password", "Пароль короче 6-ти символов");
         }
-        if (!namePattern.matcher(name).matches()) {
+        if (!namePattern.matcher(request.getName()).matches()) {
             errorResponse.getErrors().put("name", "Имя содержит недопустимые символы");
         }
 
-        getCaptcha();
+        if (captchaRepository.findBySecretCode(request.getCaptchaSecret()).isPresent()) {
 
-        CaptchaCodes captchaCode = captchaRepository.findBySecretCode(captchaSecrete).get();
+            CaptchaCodes captchaCode = captchaRepository.findBySecretCode(request.getCaptchaSecret()).get();
 
-        if (!captchaCode.getCode().equals(captcha)) {
-            errorResponse.getErrors().put("captcha", "Код с картинки введён неверно");
+            if (!captchaCode.getCode().equals(request.getCaptcha())) {
+                errorResponse.getErrors().put("captcha", "Код с картинки введён неверно");
+            }
+
+            if (errorResponse.getErrors().size() > 0) {
+                return new ResponseEntity(errorResponse, HttpStatus.OK);
+            }
+
+            User user = new User();
+            user.setEmail(request.getEMail());
+            user.setName(request.getName());
+            user.setRegTime(new Date());
+            userRepository.save(user);
+            return new ResponseEntity(result, HttpStatus.OK);
         }
 
-        if (errorResponse.getErrors().size() > 0) {
-            return new ResponseEntity(errorResponse, HttpStatus.OK);
-        }
+        return new ResponseEntity(HttpStatus.NOT_FOUND);
 
-        return new ResponseEntity(result, HttpStatus.OK);
+
 
 
     }
