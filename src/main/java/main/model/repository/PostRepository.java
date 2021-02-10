@@ -7,17 +7,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Integer> {
 
-    @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time <= NOW() ORDER BY time DESC", nativeQuery = true)
-    Page<Post> getRecentPosts(Pageable pageable);
+//    @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time <= NOW() ORDER BY time DESC", nativeQuery = true)
+//    Page<Post> getRecentPosts(Pageable pageable);
 
-    @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time <= NOW() ORDER BY time ASC ", nativeQuery = true)
-    Page<Post> getEarlyPosts(Pageable pageable);
+//    @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time <= NOW() ORDER BY time ASC ", nativeQuery = true)
+//    Page<Post> getEarlyPosts(Pageable pageable);
 
 
     @Query(value = "SELECT * FROM posts WHERE title LIKE %?1% AND time <= NOW()  AND moderation_status = 'ACCEPTED'", nativeQuery = true)
@@ -47,19 +48,22 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
 
     @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time <= NOW()", nativeQuery = true)
-    List<Post> getAllAcceptedPosts();
+    ArrayList<Post> getAllAcceptedPosts();
 
     @Query(value = "SELECT time FROM posts WHERE YEAR(time) = ?1 AND moderation_status = 'ACCEPTED' AND time <= NOW()", nativeQuery = true)
-    List<Date> getDatesByYear(String year);
+    ArrayList<Date> getDatesByYear(String year);
 
     @Query(value = "SELECT distinct year(time) FROM posts WHERE moderation_status = 'ACCEPTED' AND time <= NOW()", nativeQuery = true)
-    List<Integer> getYearsOfPosts();
+    ArrayList<Integer> getYearsOfPosts();
 
     @Query(value = "SELECT COUNT(*) FROM posts WHERE time = ?1 AND moderation_status = 'ACCEPTED' AND time <= NOW()", nativeQuery = true)
     int getCountPostsByDate(Date date);
 
     @Query(value = "SELECT time FROM posts WHERE moderation_status = 'ACCEPTED' AND time <= NOW()", nativeQuery = true)
-    List<Date> getDates();
+    ArrayList<Date> getDates();
+
+    @Query(value = "SELECT * FROM posts WHERE id = ?1 AND IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time <= NOW()", nativeQuery = true)
+    Optional<Post> findById(int id);
 
 
 }

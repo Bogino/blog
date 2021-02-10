@@ -2,10 +2,9 @@ package main.controller;
 
 import com.github.cage.Cage;
 import com.github.cage.GCage;
+import main.api.request.LoginRequest;
 import main.api.request.RegisterRequest;
-import main.api.response.CaptchaImageResponse;
-import main.api.response.RegistrationErrorResponse;
-import main.api.response.Result;
+import main.api.response.*;
 import main.model.CaptchaCodes;
 import main.model.User;
 import main.model.repository.CaptchaRepository;
@@ -13,9 +12,15 @@ import main.model.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.Charset;
+import java.security.Principal;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Random;
@@ -25,20 +30,66 @@ import java.util.regex.Pattern;
 @RequestMapping("/api/auth")
 public class ApiAuthController {
 
-    @Autowired
+
+    private final AuthenticationManager authenticationManager;
+
+
     private final CaptchaRepository captchaRepository;
 
-    @Autowired
+
     private final UserRepository userRepository;
 
-    public ApiAuthController(CaptchaRepository captchaRepository, UserRepository userRepository) {
+    @Autowired
+    public ApiAuthController(AuthenticationManager authenticationManager,
+                             CaptchaRepository captchaRepository,
+                             UserRepository userRepository) {
+        this.authenticationManager = authenticationManager;
         this.captchaRepository = captchaRepository;
         this.userRepository = userRepository;
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) auth.getPrincipal();
+
+
+        return ResponseEntity.ok(getLoginResponse(user.getUsername()));
+    }
+
+
+
+
     @GetMapping("/check")
-    private ResponseEntity isAuthorized() {
-        return new ResponseEntity(false, HttpStatus.OK);
+    private ResponseEntity<LoginResponse> check(Principal principal) {
+
+        if (principal == null)
+            return ResponseEntity.ok(new LoginResponse());
+
+        return ResponseEntity.ok(getLoginResponse(principal.getName()));
+    }
+
+    private LoginResponse getLoginResponse(String email){
+        main.model.User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException(email));
+
+        UserLoginResponse userResponse = new UserLoginResponse();
+        userResponse.setEmail(currentUser.getEmail());
+        userResponse.setName(currentUser.getName());
+        userResponse.setModeration(currentUser.getIsModerator() == 1);
+        userResponse.setId(currentUser.getId());
+
+
+        LoginResponse loginResponse = new LoginResponse();
+        loginResponse.setResult(true);
+        loginResponse.setUserLoginResponse(userResponse);
+
+        return loginResponse;
     }
 
 
@@ -131,8 +182,6 @@ public class ApiAuthController {
         }
 
         return new ResponseEntity(HttpStatus.NOT_FOUND);
-
-
 
 
     }
