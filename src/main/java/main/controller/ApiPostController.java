@@ -1,10 +1,15 @@
 package main.controller;
 
+import main.api.request.AddPostRequest;
+import main.api.response.PostAddingErrorResponse;
 import main.service.PostService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/post")
@@ -19,8 +24,7 @@ public class ApiPostController {
 
 
     @GetMapping("")
-    @PreAuthorize("hasAuthority('user:write')")
-    private ResponseEntity getPosts(
+    public ResponseEntity getPosts(
             @RequestParam(required = false, defaultValue = "recent") String mode,
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
@@ -29,8 +33,7 @@ public class ApiPostController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAuthority('user:moderate')")
-    private ResponseEntity getPostsByQuery(
+    public ResponseEntity getPostsByQuery(
             @RequestParam() String query,
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
@@ -39,7 +42,7 @@ public class ApiPostController {
     }
 
     @GetMapping("/byDate")
-    private ResponseEntity getPostsByDate(
+    public ResponseEntity getPostsByDate(
             @RequestParam("time") String date,
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
@@ -49,7 +52,7 @@ public class ApiPostController {
     }
 
     @GetMapping("/byTag")
-    private ResponseEntity getPostsByTag(
+    public ResponseEntity getPostsByTag(
             @RequestParam("tag") String name,
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
@@ -59,7 +62,8 @@ public class ApiPostController {
     }
 
     @GetMapping("/moderation")
-    private ResponseEntity getPostsForModeration(
+    @PreAuthorize("hasAuthority('user:moderate')")
+    public ResponseEntity getPostsForModeration(
             @RequestParam() String status,
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
@@ -70,7 +74,8 @@ public class ApiPostController {
     }
 
     @GetMapping("/my")
-    private ResponseEntity getMyPosts(
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity getMyPosts(
             @RequestParam() String status,
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
@@ -86,34 +91,57 @@ public class ApiPostController {
         return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
 
-//    @PostMapping()
-//    private Result addPost(
-//            @RequestParam() long timestamp,
-//            @RequestParam() int active,
-//            @RequestParam() String title,
-//            @RequestParam() String tags,
-//            @RequestParam() String text) {
-//
-//        Post post = new Post();
-//        Date date = null;
-//        Result result = new Result(true);
-//        if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
-//            date = new Date(timestamp);
-//        }
-//        if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
-//            date = Calendar.getInstance().getTime();
-//        }
-//        if ((title.length() == 0 || title.length() < 3) && (text.length() == 0 || text.length() < 50)) {
-//            throw new RuntimeException("Некорректные данные");
-//        }
-//        post.setTime(date);
-//        post.setIsActive(active);
-//        post.setTitle(title);
-//        post.setText(text);
-//        post.setStatus(ModerationStatus.valueOf("NEW"));
-//        postRepository.save(post);
-//
-//        return result;
-//    }
+
+    @PostMapping()
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity addPost(@RequestBody AddPostRequest request) {
+
+        PostAddingErrorResponse response = new PostAddingErrorResponse(false, new HashMap<>());
+
+        if (request.getTitle() == null) {
+            response.getErrors().put("title", "Заголовок отсутствует");
+            return new ResponseEntity(response, HttpStatus.OK);
+        }
+        if (request.getTitle().length() < 3) {
+            response.getErrors().put("title", "Заголовок слишком короткий");
+            return new ResponseEntity(response, HttpStatus.OK);
+        }
+        if (request.getText().length() < 50) {
+            response.getErrors().put("text", "Текс публикации слишком короткий");
+            return new ResponseEntity(response, HttpStatus.OK);
+        }
+
+        return ResponseEntity.ok(postService.addPost(request.getTimestamp(),
+                request.getActive(), request.getTitle(), request.getTags(), request.getText()));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:write')")
+    private ResponseEntity editSomeData(
+            @PathVariable int id,
+            @RequestParam() long timestamp,
+            @RequestParam() int active,
+            @RequestParam() String title,
+            @RequestParam() List<String> tags,
+            @RequestParam() String text) {
+
+        PostAddingErrorResponse response = new PostAddingErrorResponse(false, new HashMap<>());
+
+        if (title == null) {
+            response.getErrors().put("title", "Заголовок отсутствует");
+            return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
+        }
+        if (title.length() < 3) {
+            response.getErrors().put("title", "Заголовок слишком короткий");
+            return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
+        }
+        if (text.length() < 50) {
+            response.getErrors().put("text", "Текс публикации слишком короткий");
+            return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
+        }
+        
+        return ResponseEntity.ok(postService.editPost(id, timestamp, active, title, tags, text));
+
+    }
 
 }

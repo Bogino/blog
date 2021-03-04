@@ -7,7 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class CaptchaImageResponse {
 
-    private String secrete;
+    private String secret;
     private String image;
 
 }

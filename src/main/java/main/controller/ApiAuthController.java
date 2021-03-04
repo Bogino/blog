@@ -17,6 +17,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.Charset;
@@ -32,20 +33,18 @@ public class ApiAuthController {
 
 
     private final AuthenticationManager authenticationManager;
-
-
     private final CaptchaRepository captchaRepository;
-
-
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public ApiAuthController(AuthenticationManager authenticationManager,
                              CaptchaRepository captchaRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.captchaRepository = captchaRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
@@ -66,7 +65,7 @@ public class ApiAuthController {
 
 
     @GetMapping("/check")
-    private ResponseEntity<LoginResponse> check(Principal principal) {
+    public ResponseEntity<LoginResponse> check(Principal principal) {
 
         if (principal == null)
             return ResponseEntity.ok(new LoginResponse());
@@ -74,7 +73,7 @@ public class ApiAuthController {
         return ResponseEntity.ok(getLoginResponse(principal.getName()));
     }
 
-    private LoginResponse getLoginResponse(String email){
+    public LoginResponse getLoginResponse(String email){
         main.model.User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException(email));
 
@@ -94,7 +93,7 @@ public class ApiAuthController {
 
 
     @GetMapping("/captcha")
-    private ResponseEntity getCaptcha() {
+    public ResponseEntity getCaptcha() {
         Cage cage = new GCage();
         String code = cage.getTokenGenerator().next();
         String prefix = "data:image/png;base64, ";
@@ -123,24 +122,24 @@ public class ApiAuthController {
             }
         }
 
-        String secrete = sb.toString();
+        String secret = sb.toString();
 
         CaptchaCodes captcha = new CaptchaCodes();
         captcha.setCode(code);
-        captcha.setSecretCode(secrete);
+        captcha.setSecretCode(secret);
         captcha.setTime(new Date());
         captchaRepository.save(captcha);
 
         //TODO: captchaRepository.deleteOldCaptchas();
 
-        CaptchaImageResponse imageResponse = new CaptchaImageResponse(secrete, image);
+        CaptchaImageResponse imageResponse = new CaptchaImageResponse(secret, image);
 
         return new ResponseEntity(imageResponse, HttpStatus.OK);
 
     }
 
     @PostMapping("/register")
-    private ResponseEntity register(@RequestBody RegisterRequest request) {
+    public ResponseEntity register(@RequestBody RegisterRequest request) {
 
         Pattern eMailPattern = Pattern.compile("[a-z0-9]+@[a-z]+\\.[a-z]+");
         Pattern passwordPattern = Pattern.compile(".{6,}");
@@ -176,6 +175,7 @@ public class ApiAuthController {
             User user = new User();
             user.setEmail(request.getEMail());
             user.setName(request.getName());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setRegTime(new Date());
             userRepository.save(user);
             return new ResponseEntity(result, HttpStatus.OK);

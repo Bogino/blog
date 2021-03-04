@@ -1,8 +1,11 @@
 package main.model;
 
+import lombok.Data;
+
 import javax.persistence.*;
 
 @Entity
+@Data
 public class Tag2Post {
 
     @EmbeddedId

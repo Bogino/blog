@@ -12,19 +12,25 @@ import main.model.repository.PostVoteRepository;
 import main.model.repository.TagRepository;
 import main.service.SettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 import javax.imageio.ImageIO;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +39,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
@@ -62,7 +69,7 @@ public class ApiGeneralController {
     }
 
     @GetMapping("/init")
-    private InitResponse init() {
+    public InitResponse init() {
         return initResponse;
     }
 
@@ -72,7 +79,7 @@ public class ApiGeneralController {
     }
 
     @GetMapping("/tag")
-    private ResponseEntity getTags() {
+    public ResponseEntity getTags() {
 
         List<Tag> tags = tagRepository.findAll();
         double totalPosts = postRepository.getAllAcceptedPosts().size();
@@ -95,7 +102,7 @@ public class ApiGeneralController {
             value = "/tag",
             params = "query",
             method = GET)
-    private ResponseEntity getTagsByQuery(String query) {
+    public ResponseEntity getTagsByQuery(String query) {
 
         List<Tag> tags = tagRepository.findByNameContaining(query);
 
@@ -114,25 +121,56 @@ public class ApiGeneralController {
         return new ResponseEntity(apiTagResponse, HttpStatus.OK);
     }
 
-    @PostMapping("/image")
-    private ResponseEntity postImage(File file) {
+    @PostMapping(value = "/image")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity<String> uploadFile(MultipartFile file) throws IOException {
 
-        try {
-            ImageIO.read(file);
-            Path destination = Paths.get("upload/");
-            Files.copy(file.toPath(), destination.resolve(file.toPath().getFileName()));
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        InputStream in = file.getInputStream();
+        byte[] array = new byte[256];
+
+        new Random().nextBytes(array);
+
+        String randomString = new String(array, Charset.forName("UTF-8"));
+
+        StringBuffer sb = new StringBuffer();
+
+        String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
+
+        int n = 6;
+
+        for (int k = 0; k < AlphaNumericString.length(); k++) {
+
+            if (Character.isLetter(AlphaNumericString.charAt(k)) && (n > 0) || Character.isDigit(AlphaNumericString.charAt(k)) && (n > 0)) {
+
+                sb.append(AlphaNumericString.charAt(k));
+                n--;
+            }
         }
 
-        return new ResponseEntity(file.getPath(), HttpStatus.OK);
+
+        File currDir = new File("upload/" + sb.substring(0,2) + "/" + sb.substring(2,4) + "/" + sb.substring(4,6));
+        currDir.mkdirs();
+        String path = currDir.getAbsolutePath();
+        FileOutputStream f = new FileOutputStream(
+                path + "/" + file.getOriginalFilename());
+        System.out.println(f);
+        int ch = 0;
+        while ((ch = in.read()) != -1) {
+            f.write(ch);
+        }
+
+        f.flush();
+        f.close();
+
+        return ResponseEntity.ok(path);
     }
 
     @RequestMapping(
             value = "/calendar",
             params = "year",
             method = GET)
-    private ResponseEntity getCountPostsByYear(String year) {
+    public ResponseEntity getCountPostsByYear(String year) {
 
         ApiCalendarResponse apiCalendarResponse = new ApiCalendarResponse();
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -149,7 +187,7 @@ public class ApiGeneralController {
     }
 
     @GetMapping("/calendar")
-    private ResponseEntity getCountPostsWithDates() {
+    public ResponseEntity getCountPostsWithDates() {
 
         ApiCalendarResponse apiCalendarResponse = new ApiCalendarResponse();
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -166,7 +204,7 @@ public class ApiGeneralController {
     }
 
     @GetMapping("statistics/all")
-    private ResponseEntity getStatistic() {
+    public ResponseEntity getStatistic() {
 
         int postsCount = postRepository.getAllAcceptedPosts().size();
 
@@ -196,5 +234,12 @@ public class ApiGeneralController {
         ApiStatisticResponse apiStatisticResponse = new ApiStatisticResponse(postsCount, likesCount, dislikesCount, viewsCount, firstPublication);
 
         return new ResponseEntity (apiStatisticResponse, HttpStatus.OK);
+    }
+
+    @Bean(name = "multipartResolver")
+    public CommonsMultipartResolver multipartResolver() {
+        CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
+        multipartResolver.setMaxUploadSize(100000);
+        return multipartResolver;
     }
 }

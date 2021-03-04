@@ -2,13 +2,9 @@ package main.service;
 
 import main.api.response.ApiPostResponse;
 import main.api.response.ApiPostResponseById;
-import main.model.Post;
-import main.model.PostComment;
-import main.model.PostVote;
-import main.model.repository.PostCommentRepository;
-import main.model.repository.PostRepository;
-import main.model.repository.PostVoteRepository;
-import main.model.repository.TagRepository;
+import main.api.response.Result;
+import main.model.*;
+import main.model.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,8 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class PostService {
@@ -35,13 +30,17 @@ public class PostService {
     @Autowired
     private final TagRepository tagRepository;
 
+    @Autowired
+    private final Tag2PostRepository tag2PostRepository;
+
     private long count = 0;
 
-    public PostService(PostRepository postRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository) {
+    public PostService(PostRepository postRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, Tag2PostRepository tag2PostRepository) {
         this.postRepository = postRepository;
         this.postVoteRepository = postVoteRepository;
         this.postCommentRepository = postCommentRepository;
         this.tagRepository = tagRepository;
+        this.tag2PostRepository = tag2PostRepository;
     }
 
 
@@ -203,6 +202,7 @@ public class PostService {
 
     }
 
+    @Transactional
     public ApiPostResponse getPostsForModeration(String status, int offset, int limit) {
 
         int page = offset / limit;
@@ -229,6 +229,7 @@ public class PostService {
 
     }
 
+    @Transactional
     public ApiPostResponse getMyPosts(String status, int offset, int limit) {
 
         int page = offset / limit;
@@ -267,6 +268,76 @@ public class PostService {
 
 
         return apiPostResponse;
+    }
+
+    @Transactional
+    public Result addPost(long timestamp, int active, String title, List<String> tags, String text) {
+        Post post = new Post();
+        Date date = null;
+        Result result = new Result(true);
+
+        if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
+            date = new Date(timestamp);
+        }
+        if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
+            date = new Date();
+        }
+        post.setTime(date);
+        post.setIsActive(active);
+        post.setTitle(title);
+        post.setText(text);
+        post.setStatus(ModerationStatus.valueOf("NEW"));
+        postRepository.save(post);
+
+        for (String tagName : tags) {
+            Tag tag = new Tag();
+            tag.setName(tagName);
+            tagRepository.save(tag);
+            Tag2Post tag2Post = new Tag2Post();
+            tag2Post.setPost(post);
+            tag2Post.setTag(tag);
+            tag2PostRepository.save(tag2Post);
+        }
+
+
+
+        return result;
+    }
+
+    @Transactional
+    public Result editPost(int id, long timestamp, int active, String title, List<String> tags, String text) {
+
+
+        Post post = postRepository.findById(id).orElseThrow();
+        Date date = null;
+        Result result = new Result(true);
+
+        if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
+            date = new Date(timestamp);
+        }
+        if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
+            date = new Date();
+        }
+        Set<Tag2Post> tag2PostSet = new HashSet<>();
+        post.setIsActive(active);
+        post.setText(text);
+        post.setTime(date);
+        post.setTitle(title);
+        post.setStatus(ModerationStatus.valueOf("NEW"));
+        for (String tagName : tags) {
+            Tag tag = new Tag();
+            tag.setName(tagName);
+            Tag2Post tag2Post = new Tag2Post();
+            tag2Post.setPost(post);
+            tag2Post.setTag(tag);
+            tag2PostSet.add(tag2Post);
+        }
+        post.setTag2Posts(tag2PostSet);
+
+        postRepository.save(post);
+
+        return result;
+
     }
 
 
