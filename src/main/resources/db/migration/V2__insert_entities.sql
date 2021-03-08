@@ -1,5 +1,7 @@
-insert into users (is_moderator, reg_time, name, email, password, code, photo) values(0, CURRENT_DATE, "Vanya", "ivan@yandex.ru", "$2y$12$iUMhVI/FnyqD.xO6OqYIp.8fEcypTMTSSGN0Dgjt96sCAUVmDk45m", NULL, NULL),
-(1, CURRENT_DATE, "Гена", "san@yandex.ru", "$2y$12$p5JCHkyThXQ6rgHukJQtxeKGURVq5Gh8fxkpSp7cPKlLK4.aIhI1W", NULL, NULL);
+insert into users (is_moderator, reg_time, name, email, password, code, photo) values
+(0, CURRENT_DATE, "Vanya", "ivan@yandex.ru", "$2y$12$iUMhVI/FnyqD.xO6OqYIp.8fEcypTMTSSGN0Dgjt96sCAUVmDk45m", NULL, NULL),
+(1, CURRENT_DATE, "Гена", "san@yandex.ru", "$2y$12$p5JCHkyThXQ6rgHukJQtxeKGURVq5Gh8fxkpSp7cPKlLK4.aIhI1W", NULL, NULL),
+(1, CURRENT_DATE, "Илья", "ibogino@yandex.ru", "$2y$12$Im5T.yooVrI18uQWvdDIXuEoPsSUfMDYt8oBZOYDrDeO.WhDHAnNm", NULL, NULL);
 
 insert into posts (is_active, moderation_status, text, time, title, view_count, moderator_id, user_id) values(true, "ACCEPTED", "Текст поста от Вани по Java", "2020-12-01 12:34:45", "Заголовок от Вани", 154, 2, 1), (true, "ACCEPTED", "Текст поста от Сани по C#", "2020-12-02 12:34:45", "Заголовок от Сани", 150, 2, 2),
 (true, "ACCEPTED", "Текст поста от Сани по Еде", "2020-12-03 12:34:45", "Заголовок от Сани про еду", 120, 2, 2), (true, "ACCEPTED", "Второй текст поста от Сани по Еде", "2020-12-04 12:34:45", "Заголовок второго посата от Сани про еду", 120, 2, 1),

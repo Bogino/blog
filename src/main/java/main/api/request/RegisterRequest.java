@@ -5,11 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
 public class RegisterRequest {
 
     @JsonProperty("e_mail")
-    private String eMail;
+    private String email;
 
     private String password;
 

@@ -5,10 +5,12 @@ import lombok.Data;
 
 import java.util.HashMap;
 
-@Data
 @AllArgsConstructor
-public class PostAddingErrorResponse {
+@Data
+public class ErrorResponse {
 
     private boolean result;
     private HashMap<String, String> errors;
 }
+
+

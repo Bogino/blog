@@ -1,8 +1,13 @@
 package main.controller;
 
 import main.api.request.AddPostRequest;
-import main.api.response.PostAddingErrorResponse;
+import main.api.response.ErrorResponse;
+import main.api.response.Result;
+import main.model.PostVote;
+import main.model.repository.PostRepository;
+import main.model.repository.PostVoteRepository;
 import main.service.PostService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,8 +23,16 @@ public class ApiPostController {
 
     private final PostService postService;
 
-    public ApiPostController(PostService postService) {
+    @Autowired
+    private final PostRepository postRepository;
+
+    @Autowired
+    private final PostVoteRepository postVoteRepository;
+
+    public ApiPostController(PostService postService, PostRepository postRepository, PostVoteRepository postVoteRepository) {
         this.postService = postService;
+        this.postRepository = postRepository;
+        this.postVoteRepository = postVoteRepository;
     }
 
 
@@ -96,7 +109,7 @@ public class ApiPostController {
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity addPost(@RequestBody AddPostRequest request) {
 
-        PostAddingErrorResponse response = new PostAddingErrorResponse(false, new HashMap<>());
+        ErrorResponse response = new ErrorResponse(false, new HashMap<>());
 
         if (request.getTitle() == null) {
             response.getErrors().put("title", "Заголовок отсутствует");
@@ -117,7 +130,7 @@ public class ApiPostController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('user:write')")
-    private ResponseEntity editSomeData(
+    public ResponseEntity editSomeData(
             @PathVariable int id,
             @RequestParam() long timestamp,
             @RequestParam() int active,
@@ -125,7 +138,7 @@ public class ApiPostController {
             @RequestParam() List<String> tags,
             @RequestParam() String text) {
 
-        PostAddingErrorResponse response = new PostAddingErrorResponse(false, new HashMap<>());
+        ErrorResponse response = new ErrorResponse(false, new HashMap<>());
 
         if (title == null) {
             response.getErrors().put("title", "Заголовок отсутствует");
@@ -143,5 +156,36 @@ public class ApiPostController {
         return ResponseEntity.ok(postService.editPost(id, timestamp, active, title, tags, text));
 
     }
+
+    @PostMapping("/like")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity likePost(@RequestParam("post_id") int postId){
+
+        PostVote postVote = postVoteRepository.findByPostId(postRepository.findById(postId).orElseThrow()).orElseThrow();
+
+        if (postVote.getValue() > 0)
+            return ResponseEntity.ok(new Result(false));
+        if (postVote.getValue() < 0)
+            postVote.setValue(1);
+
+        return ResponseEntity.ok(new Result(true));
+    }
+
+    @PostMapping("/dislike")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity dislikePost(@RequestParam("post_id") int postId){
+
+        PostVote postVote = postVoteRepository.findByPostId(postRepository.findById(postId).orElseThrow()).orElseThrow();
+
+        if (postVote.getValue() < 0)
+            return ResponseEntity.ok(new Result(false));
+        if (postVote.getValue() > 0)
+            postVote.setValue(-1);
+
+        return ResponseEntity.ok(new Result(true));
+    }
+
+
+
 
 }

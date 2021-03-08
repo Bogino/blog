@@ -3,11 +3,13 @@ package main.api.request;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
+@AllArgsConstructor
 @Data
-public class LoginRequest {
-    @JsonProperty("e_mail")
-    private String email;
-    private String password;
+public class PostModerationRequest {
+
+    @JsonProperty("post_id")
+    private int postId;
+
+    private String decision;
 }

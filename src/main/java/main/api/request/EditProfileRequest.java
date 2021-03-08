@@ -1,13 +1,18 @@
 package main.api.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
-public class LoginRequest {
+public class EditProfileRequest {
+
+    private MultipartFile photo;
+    private String name;
     @JsonProperty("e_mail")
     private String email;
     private String password;
+    private int removePhoto;
+
+
 }

@@ -123,7 +123,7 @@ public class PostService {
     @Transactional
     public ApiPostResponseById getPostsById(int id) {
 
-        Optional<Post> optionalPost = postRepository.findById(id);
+        Optional<Post> optionalPost = postRepository.findByIdAcceptedPost(id);
 
         Post post = optionalPost.orElseThrow();
 
@@ -308,7 +308,7 @@ public class PostService {
     public Result editPost(int id, long timestamp, int active, String title, List<String> tags, String text) {
 
 
-        Post post = postRepository.findById(id).orElseThrow();
+        Post post = postRepository.findByIdAcceptedPost(id).orElseThrow();
         Date date = null;
         Result result = new Result(true);
 

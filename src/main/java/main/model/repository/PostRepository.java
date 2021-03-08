@@ -63,6 +63,11 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     ArrayList<Date> getDates();
 
     @Query(value = "SELECT * FROM posts WHERE id = ?1 AND IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time <= NOW()", nativeQuery = true)
+    Optional<Post> findByIdAcceptedPost(int id);
+
+    @Query(value = "SELECT user_id FROM posts WHERE id = ?1", nativeQuery = true)
+    int findUserIdByPostId(int postId);
+
     Optional<Post> findById(int id);
 
 

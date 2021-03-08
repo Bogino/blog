@@ -8,11 +8,14 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PostVoteRepository extends JpaRepository<PostVote, Integer> {
 
     @Query(value = "select pv from PostVote pv where pv.postId = ?1")
     List<PostVote> findByPost(Post post);
+
+    Optional<PostVote> findByPostId(Post postId);
 
 }
