@@ -10,7 +10,7 @@ create table captcha_codes (id integer not null auto_increment, code varchar(255
 create table global_settings (id integer not null auto_increment, code varchar(255), name varchar(255), value varchar(255), primary key (id)) engine=InnoDB;
 create table post_comments (id integer not null auto_increment, parent_id integer, post_id integer not null, user_id integer not null, time datetime(6), text varchar(255), primary key (id)) engine=InnoDB;
 create table post_votes (id integer not null auto_increment, post_id integer, time DATETIME, value integer not null, user_id integer not null, primary key (id)) engine=InnoDB;
-create table posts (id integer not null auto_increment, is_active integer, moderation_status varchar(255), text varchar(1000), time datetime(6), title varchar(255), view_count integer, moderator_id integer, user_id integer not null, primary key (id)) engine=InnoDB;
+create table posts (id integer not null auto_increment, is_active integer, moderation_status varchar(255), text varchar(255) not null, time datetime(6), title varchar(255), view_count integer, moderator_id integer, user_id integer not null, primary key (id)) engine=InnoDB;
 create table tag2post (post_id integer not null, tag_id integer not null, primary key (post_id, tag_id)) engine=InnoDB;
 create table tags (id integer not null auto_increment, name varchar(255), primary key (id)) engine=InnoDB;
 create table users (id integer not null auto_increment, code varchar(255), email varchar(255), is_moderator integer not null, name varchar(255), password varchar(255), photo varchar(255), reg_time datetime(6), primary key (id)) engine=InnoDB;

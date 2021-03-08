@@ -1,13 +1,11 @@
 package main.controller;
 
 import main.api.request.AddPostRequest;
+import main.api.response.ApiPostResponseById;
 import main.api.response.ErrorResponse;
 import main.api.response.Result;
-import main.model.PostVote;
-import main.model.repository.PostRepository;
-import main.model.repository.PostVoteRepository;
+import main.exception.PostNotFoundException;
 import main.service.PostService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,16 +21,9 @@ public class ApiPostController {
 
     private final PostService postService;
 
-    @Autowired
-    private final PostRepository postRepository;
 
-    @Autowired
-    private final PostVoteRepository postVoteRepository;
-
-    public ApiPostController(PostService postService, PostRepository postRepository, PostVoteRepository postVoteRepository) {
+    public ApiPostController(PostService postService) {
         this.postService = postService;
-        this.postRepository = postRepository;
-        this.postVoteRepository = postVoteRepository;
     }
 
 
@@ -100,8 +91,13 @@ public class ApiPostController {
     @GetMapping("/{id}")
     public ResponseEntity getPost(@PathVariable int id) {
 
-
-        return new ResponseEntity(HttpStatus.NOT_FOUND);
+        ApiPostResponseById postResponse;
+        try {
+            postResponse = postService.getPostsById(id);
+        } catch (PostNotFoundException e) {
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        }
+        return ResponseEntity.ok(postResponse);
     }
 
 
@@ -113,15 +109,16 @@ public class ApiPostController {
 
         if (request.getTitle() == null) {
             response.getErrors().put("title", "Заголовок отсутствует");
-            return new ResponseEntity(response, HttpStatus.OK);
         }
         if (request.getTitle().length() < 3) {
             response.getErrors().put("title", "Заголовок слишком короткий");
-            return new ResponseEntity(response, HttpStatus.OK);
         }
         if (request.getText().length() < 50) {
             response.getErrors().put("text", "Текс публикации слишком короткий");
-            return new ResponseEntity(response, HttpStatus.OK);
+        }
+
+        if(response.getErrors().size() > 0){
+            return ResponseEntity.ok(response);
         }
 
         return ResponseEntity.ok(postService.addPost(request.getTimestamp(),
@@ -152,40 +149,24 @@ public class ApiPostController {
             response.getErrors().put("text", "Текс публикации слишком короткий");
             return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
         }
-        
+
         return ResponseEntity.ok(postService.editPost(id, timestamp, active, title, tags, text));
 
     }
 
     @PostMapping("/like")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity likePost(@RequestParam("post_id") int postId){
+    public ResponseEntity likePost(@RequestParam("post_id") int postId) {
 
-        PostVote postVote = postVoteRepository.findByPostId(postRepository.findById(postId).orElseThrow()).orElseThrow();
-
-        if (postVote.getValue() > 0)
-            return ResponseEntity.ok(new Result(false));
-        if (postVote.getValue() < 0)
-            postVote.setValue(1);
-
-        return ResponseEntity.ok(new Result(true));
+        return ResponseEntity.ok(postService.likePost(postId));
     }
 
     @PostMapping("/dislike")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity dislikePost(@RequestParam("post_id") int postId){
-
-        PostVote postVote = postVoteRepository.findByPostId(postRepository.findById(postId).orElseThrow()).orElseThrow();
-
-        if (postVote.getValue() < 0)
-            return ResponseEntity.ok(new Result(false));
-        if (postVote.getValue() > 0)
-            postVote.setValue(-1);
+    public ResponseEntity dislikePost(@RequestParam("post_id") int postId) {
 
         return ResponseEntity.ok(new Result(true));
     }
-
-
 
 
 }

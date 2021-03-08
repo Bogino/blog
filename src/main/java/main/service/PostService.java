@@ -1,8 +1,11 @@
 package main.service;
 
-import main.api.response.ApiPostResponse;
-import main.api.response.ApiPostResponseById;
-import main.api.response.Result;
+import main.api.request.AddCommentRequest;
+import main.api.request.PostModerationRequest;
+import main.api.response.*;
+import main.exception.NotFoundParentCommentException;
+import main.exception.NullPointerCommentTextException;
+import main.exception.PostNotFoundException;
 import main.model.*;
 import main.model.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,9 +13,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
@@ -20,6 +26,9 @@ public class PostService {
 
     @Autowired
     private final PostRepository postRepository;
+
+    @Autowired
+    private final UserRepository userRepository;
 
     @Autowired
     private final PostVoteRepository postVoteRepository;
@@ -35,8 +44,9 @@ public class PostService {
 
     private long count = 0;
 
-    public PostService(PostRepository postRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, Tag2PostRepository tag2PostRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, Tag2PostRepository tag2PostRepository) {
         this.postRepository = postRepository;
+        this.userRepository = userRepository;
         this.postVoteRepository = postVoteRepository;
         this.postCommentRepository = postCommentRepository;
         this.tagRepository = tagRepository;
@@ -121,11 +131,11 @@ public class PostService {
     }
 
     @Transactional
-    public ApiPostResponseById getPostsById(int id) {
+    public ApiPostResponseById getPostsById(int id) throws PostNotFoundException {
 
-        Optional<Post> optionalPost = postRepository.findByIdAcceptedPost(id);
+        Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(()-> new PostNotFoundException());
 
-        Post post = optionalPost.orElseThrow();
+
 
 
         int likes = 0;
@@ -300,7 +310,6 @@ public class PostService {
         }
 
 
-
         return result;
     }
 
@@ -337,6 +346,145 @@ public class PostService {
         postRepository.save(post);
 
         return result;
+
+    }
+
+    public ApiCalendarResponse getCountPostsByYear(String year) {
+
+        ApiCalendarResponse apiCalendarResponse = new ApiCalendarResponse();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        for (Integer y : postRepository.getYearsOfPosts()) {
+            apiCalendarResponse.getYears().add(y);
+        }
+
+        for (Date date : postRepository.getDatesByYear(year)) {
+            apiCalendarResponse.getPosts().put(dateFormat.format(date), postRepository.getCountPostsByDate(date));
+        }
+
+
+        return apiCalendarResponse;
+
+    }
+
+    public ApiCalendarResponse getCountPostsForCurrentYear() {
+
+        ApiCalendarResponse apiCalendarResponse = new ApiCalendarResponse();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar calendar = Calendar.getInstance(TimeZone.getDefault(), Locale.getDefault());
+        calendar.setTime(new Date());
+        int currentYear = calendar.get(java.util.Calendar.YEAR);
+        apiCalendarResponse.getYears().add(currentYear);
+
+        for (Date date : postRepository.getDatesByYear(String.valueOf(currentYear))) {
+            apiCalendarResponse.getPosts().put(dateFormat.format(date), postRepository.getCountPostsByDate(date));
+        }
+
+        return apiCalendarResponse;
+
+    }
+
+    public ApiStatisticResponse getStatistic() {
+
+        int postsCount = postRepository.getAllAcceptedPosts().size();
+
+        ArrayList<Post> posts = postRepository.getAllAcceptedPosts();
+
+        int likesCount = 0;
+        int dislikesCount = 0;
+        int viewsCount = 0;
+
+        for (Post p : posts) {
+
+            viewsCount += p.getViewCount();
+
+            List<PostVote> postVotes = postVoteRepository.findByPost(p);
+
+            for (PostVote pv : postVotes) {
+                if (pv.getValue() < 0) {
+                    dislikesCount++;
+                } else likesCount++;
+            }
+        }
+
+        Page<Post> earlyPosts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(0, 1, Sort.by("time").ascending()));
+
+        long firstPublication = earlyPosts.iterator().next().getTime().getTime() / 1000;
+
+        ApiStatisticResponse apiStatisticResponse = new ApiStatisticResponse(postsCount, likesCount, dislikesCount, viewsCount, firstPublication);
+
+        return apiStatisticResponse;
+
+    }
+
+    public int addComment(AddCommentRequest request) throws NullPointerCommentTextException, NotFoundParentCommentException {
+
+        if (request.getText() == null) {
+
+            throw new NullPointerCommentTextException();
+
+        }
+
+        PostComment comment = new PostComment();
+
+        if (request.getParentId() != 0) {
+
+            int parentId = postRepository.findByIdAcceptedPost(request.getParentId()).orElseThrow(() -> new NotFoundParentCommentException()).getId();
+            comment.setParentId(parentId);
+
+        }
+
+        comment.setTime(new Date());
+        comment.setUserId(userRepository.findById(postRepository.findUserIdByPostId(request.getPostId())).orElseThrow());
+        comment.setText(request.getText());
+        comment.setPostId(postRepository.findByIdAcceptedPost(request.getPostId()).orElseThrow());
+        postCommentRepository.save(comment);
+
+        return comment.getId();
+
+    }
+
+    public Result moderate(PostModerationRequest request) {
+
+        Result result = new Result(true);
+        Post post = postRepository.findById(request.getPostId()).orElseThrow();
+        if (request.getDecision().equals("accept"))
+            post.setStatus(ModerationStatus.ACCEPTED);
+        else post.setStatus(ModerationStatus.DECLINED);
+
+        postRepository.save(post);
+
+        return result;
+
+    }
+
+    public Result likePost(int postId) {
+
+        PostVote postVote = postVoteRepository.findByPostId(postRepository.findById(postId).orElseThrow()).orElseThrow();
+
+        if (postVote.getValue() > 0)
+            return new Result(false);
+        if (postVote.getValue() < 0)
+            postVote.setValue(1);
+
+        postVoteRepository.save(postVote);
+
+        return new Result(true);
+
+    }
+
+    public Result dislikePost(int postId) {
+
+        PostVote postVote = postVoteRepository.findByPostId(postRepository.findById(postId).orElseThrow()).orElseThrow();
+
+        if (postVote.getValue() < 0)
+            return new Result(false);
+        if (postVote.getValue() > 0)
+            postVote.setValue(-1);
+
+        postVoteRepository.save(postVote);
+
+        return new Result(true);
 
     }
 

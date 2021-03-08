@@ -1,5 +1,6 @@
 package main.model.repository;
 
+import main.model.ModerationStatus;
 import main.model.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -35,6 +37,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
     @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = ?1 AND time <= NOW()", nativeQuery = true)
     Page<Post> getActivePosts(String status, Pageable pageable);
+
+    @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = 'NEW' AND time <= NOW()", nativeQuery = true)
+    List<Post> getNewPosts();
 
     @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 0 AND time <= NOW()", nativeQuery = true)
     Page<Post> getInActivePosts(Pageable pageable);
