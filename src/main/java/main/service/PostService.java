@@ -13,7 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,15 +43,18 @@ public class PostService {
     @Autowired
     private final Tag2PostRepository tag2PostRepository;
 
+    private final SettingsService settingsService;
+
     private long count = 0;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, Tag2PostRepository tag2PostRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, Tag2PostRepository tag2PostRepository, SettingsService settingsService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.postVoteRepository = postVoteRepository;
         this.postCommentRepository = postCommentRepository;
         this.tagRepository = tagRepository;
         this.tag2PostRepository = tag2PostRepository;
+        this.settingsService = settingsService;
     }
 
 
@@ -133,9 +137,7 @@ public class PostService {
     @Transactional
     public ApiPostResponseById getPostsById(int id) throws PostNotFoundException {
 
-        Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(()-> new PostNotFoundException());
-
-
+        Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(() -> new PostNotFoundException());
 
 
         int likes = 0;
@@ -242,6 +244,8 @@ public class PostService {
     @Transactional
     public ApiPostResponse getMyPosts(String status, int offset, int limit) {
 
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
         int page = offset / limit;
         Page<Post> posts = null;
 
@@ -263,17 +267,19 @@ public class PostService {
         ApiPostResponse apiPostResponse = new ApiPostResponse();
         count = posts.getTotalElements();
         for (Post p : posts) {
-            int likes = 0;
-            int dislikes = 0;
-            List<PostVote> postVotes = postVoteRepository.findByPost(p);
-            int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
-            for (PostVote pv : postVotes) {
-                if (pv.getValue() < 0) {
-                    dislikes++;
-                } else likes++;
-            }
+            if (p.getUserId().getEmail().equals(principal.getUsername())) {
+                int likes = 0;
+                int dislikes = 0;
+                List<PostVote> postVotes = postVoteRepository.findByPost(p);
+                int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
+                for (PostVote pv : postVotes) {
+                    if (pv.getValue() < 0) {
+                        dislikes++;
+                    } else likes++;
+                }
 
-            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+            }
         }
 
 
@@ -296,8 +302,17 @@ public class PostService {
         post.setIsActive(active);
         post.setTitle(title);
         post.setText(text);
-        post.setStatus(ModerationStatus.valueOf("NEW"));
-        postRepository.save(post);
+        if (settingsService.getGlobalSettings().isPostPremoderation() == true)
+            post.setStatus(ModerationStatus.valueOf("NEW"));
+        else if (post.getIsActive() == 1)
+            post.setStatus(ModerationStatus.ACCEPTED);
+        post.setViewCount(0);
+
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        post.setUserId(user);
 
         for (String tagName : tags) {
             Tag tag = new Tag();
@@ -306,8 +321,15 @@ public class PostService {
             Tag2Post tag2Post = new Tag2Post();
             tag2Post.setPost(post);
             tag2Post.setTag(tag);
+            Tag2PostKey key = new Tag2PostKey();
+            key.setPostId(post.getId());
+            key.setTagId(tag.getId());
+            tag2Post.setTag2PostKey(key);
             tag2PostRepository.save(tag2Post);
+            post.getTag2Posts().add(tag2Post);
         }
+
+        postRepository.save(post);
 
 
         return result;
@@ -329,9 +351,11 @@ public class PostService {
         }
         Set<Tag2Post> tag2PostSet = new HashSet<>();
         post.setIsActive(active);
-        post.setText(text);
+        if (text != null)
+            post.setText(text);
         post.setTime(date);
-        post.setTitle(title);
+        if (title != null)
+            post.setTitle(title);
         post.setStatus(ModerationStatus.valueOf("NEW"));
         for (String tagName : tags) {
             Tag tag = new Tag();
@@ -413,10 +437,30 @@ public class PostService {
 
         ApiStatisticResponse apiStatisticResponse = new ApiStatisticResponse(postsCount, likesCount, dislikesCount, viewsCount, firstPublication);
 
+        if (settingsService.getGlobalSettings().isStatisticsIsPublic() == true) {
+
+            return apiStatisticResponse;
+
+        } else {
+
+            UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+            User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+            if (user.getIsModerator() == 1) {
+
+                return apiStatisticResponse;
+
+            }
+
+        }
+
         return apiStatisticResponse;
+
 
     }
 
+    @Transactional
     public int addComment(AddCommentRequest request) throws NullPointerCommentTextException, NotFoundParentCommentException {
 
         if (request.getText() == null) {
@@ -444,23 +488,47 @@ public class PostService {
 
     }
 
+    @Transactional
     public Result moderate(PostModerationRequest request) {
 
         Result result = new Result(true);
         Post post = postRepository.findById(request.getPostId()).orElseThrow();
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        post.setModeratorId(user);
+
+
         if (request.getDecision().equals("accept"))
             post.setStatus(ModerationStatus.ACCEPTED);
         else post.setStatus(ModerationStatus.DECLINED);
 
-        postRepository.save(post);
 
+        postRepository.save(post);
         return result;
 
     }
 
+    @Transactional
     public Result likePost(int postId) {
 
-        PostVote postVote = postVoteRepository.findByPostId(postRepository.findById(postId).orElseThrow()).orElseThrow();
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        Post post = postRepository.findById(postId).orElseThrow();
+
+        PostVote postVote = postVoteRepository.findByUserId(user);
+
+        if (postVote == null) {
+            postVote = new PostVote();
+            postVote.setUserId(user);
+            postVote.setPostId(post);
+            postVote.setValue(1);
+            postVoteRepository.save(postVote);
+            return new Result(true);
+        }
 
         if (postVote.getValue() > 0)
             return new Result(false);
@@ -473,9 +541,25 @@ public class PostService {
 
     }
 
+    @Transactional
     public Result dislikePost(int postId) {
 
-        PostVote postVote = postVoteRepository.findByPostId(postRepository.findById(postId).orElseThrow()).orElseThrow();
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        PostVote postVote = postVoteRepository.findByUserId(user);
+
+        Post post = postRepository.findById(postId).orElseThrow();
+
+        if (postVote == null) {
+            postVote = new PostVote();
+            postVote.setUserId(user);
+            postVote.setPostId(post);
+            postVote.setValue(-1);
+            postVoteRepository.save(postVote);
+            return new Result(true);
+        }
 
         if (postVote.getValue() < 0)
             return new Result(false);

@@ -2,11 +2,12 @@ package main.model;
 import lombok.Data;
 import javax.persistence.*;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 
+@Entity
 @Data
 @Table(name = "posts")
-@Entity
 public class Post {
 
     @Id
@@ -33,7 +34,7 @@ public class Post {
     private String title;
 
     @OneToMany(mappedBy = "post")
-    private Set<Tag2Post> tag2Posts;
+    private Set<Tag2Post> tag2Posts = new HashSet<>();
 
     private String text;
 

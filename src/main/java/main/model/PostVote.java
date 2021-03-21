@@ -22,7 +22,7 @@ public class PostVote {
     @JoinColumn(name = "post_id", nullable = false)
     private Post postId;
 
-    private Date time;
+    private Date time = new Date();
 
     private int value;
 
