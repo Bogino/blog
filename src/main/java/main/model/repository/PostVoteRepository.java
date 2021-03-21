@@ -2,6 +2,7 @@ package main.model.repository;
 
 import main.model.Post;
 import main.model.PostVote;
+import main.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +17,6 @@ public interface PostVoteRepository extends JpaRepository<PostVote, Integer> {
     @Query(value = "select pv from PostVote pv where pv.postId = ?1")
     List<PostVote> findByPost(Post post);
 
-    Optional<PostVote> findByPostId(Post postId);
+    PostVote findByUserId(User userId);
 
 }

@@ -1,18 +1,22 @@
 package main.controller;
 
 import main.api.request.AddCommentRequest;
-import main.api.request.EditProfileRequest;
 import main.api.request.PostModerationRequest;
+import main.api.request.ProfileRequest;
+import main.api.request.SettingsRequest;
 import main.api.response.ErrorResponse;
 import main.api.response.InitResponse;
 import main.api.response.SettingsResponse;
 import main.exception.NotFoundParentCommentException;
 import main.exception.NullPointerCommentTextException;
+import main.model.GlobalSettings;
 import main.service.PostService;
 import main.service.SettingsService;
 import main.service.TagService;
+import main.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,13 +51,16 @@ public class ApiGeneralController {
 
     private final PostService postService;
 
+    private final UserService userService;
 
-    public ApiGeneralController(SettingsService settingsService, TagService tagService, InitResponse initResponse, PasswordEncoder passwordEncoder, PostService postService) {
+
+    public ApiGeneralController(SettingsService settingsService, TagService tagService, InitResponse initResponse, PasswordEncoder passwordEncoder, PostService postService, UserService userService) {
         this.settingsService = settingsService;
         this.tagService = tagService;
         this.initResponse = initResponse;
         this.passwordEncoder = passwordEncoder;
         this.postService = postService;
+        this.userService = userService;
     }
 
     @GetMapping("/init")
@@ -84,11 +91,11 @@ public class ApiGeneralController {
 
     @PostMapping(value = "/image")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity<String> uploadFile(MultipartFile file) {
+    public ResponseEntity<String> uploadImage(MultipartFile image) {
 
         String path = null;
         try {
-            ImageIO.read(file.getResource().getFile());
+            ImageIO.read(image.getInputStream());
         } catch (IOException e) {
             ErrorResponse imageUploadErrorResponse = new ErrorResponse(false, new HashMap<>());
             imageUploadErrorResponse.getErrors().put("image", "Неверный формат файла");
@@ -97,7 +104,7 @@ public class ApiGeneralController {
 
         InputStream in = null;
         try {
-            in = file.getInputStream();
+            in = image.getInputStream();
 
             byte[] array = new byte[256];
 
@@ -123,9 +130,9 @@ public class ApiGeneralController {
 
             File currDir = new File("upload/" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6));
             currDir.mkdirs();
-            path = currDir.getAbsolutePath();
+            path = currDir.getPath();
             FileOutputStream f = new FileOutputStream(
-                    path + "/" + file.getOriginalFilename());
+                    path + "/" + image.getOriginalFilename());
             int ch;
             while ((ch = in.read()) != -1) {
                 f.write(ch);
@@ -138,7 +145,7 @@ public class ApiGeneralController {
             e.printStackTrace();
         }
 
-        return ResponseEntity.ok(path);
+        return ResponseEntity.ok(path + "\\" + image.getOriginalFilename());
 
     }
 
@@ -199,25 +206,38 @@ public class ApiGeneralController {
     @PreAuthorize("hasAuthority('user:moderate')")
     public ResponseEntity moderate(@RequestBody PostModerationRequest request) {
 
-
         return ResponseEntity.ok(postService.moderate(request));
 
     }
 
-//    @PostMapping("/profile/my")
-//    @PreAuthorize("hasAuthority('user:write')")
-//    public ResponseEntity editProfile(@RequestBody EditProfileRequest request) {
-//
-//        return new ResponseEntity(result, HttpStatus.OK);
-//
-//    }
+    @PostMapping(value = "/profile/my", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity updateProfile(@RequestBody ProfileRequest request){
+        return ResponseEntity.ok(userService.updateProfile(request.getEmail(), request.getName(),
+                request.getPassword(), request.getRemovePhoto()));
+
+    }
+
+    @PostMapping(value = "/profile/my", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity updateProfileWithPhoto(
+            @RequestParam() MultipartFile photo,
+            @RequestParam(value = "removePhoto", required = false) String removePhoto,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "email", required = false) String email,
+            @RequestParam(name = "password", required = false) String password
+    ) {
+        return ResponseEntity.ok(userService.getPostProfileMy(photo, email, name, password, removePhoto));
+    }
+
 
 //    @PutMapping("/settings")
 //    @PreAuthorize("hasAuthority('user:moderate')")
 //    public ResponseEntity saveSettings(@RequestBody SettingsRequest request){
 //
 //        GlobalSettings globalSettings = new GlobalSettings();
-//        globalSettings.setCode();
+//
+//
 //
 //    }
 

@@ -5,10 +5,13 @@ import main.api.request.EmailRestoreRequest;
 import main.api.request.LoginRequest;
 import main.api.request.RegisterRequest;
 import main.api.response.LoginResponse;
+import main.api.response.Result;
+import main.service.SettingsService;
 import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,13 +30,16 @@ public class ApiAuthController {
 
     private final UserService userService;
 
+    private final SettingsService settingsService;
+
 
     @Autowired
-    public ApiAuthController(AuthenticationManager authenticationManager, UserService userService) {
+    public ApiAuthController(AuthenticationManager authenticationManager, UserService userService, SettingsService settingsService) {
 
         this.authenticationManager = authenticationManager;
 
         this.userService = userService;
+        this.settingsService = settingsService;
     }
 
     @PostMapping("/login")
@@ -71,8 +77,10 @@ public class ApiAuthController {
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody RegisterRequest request) {
 
-
-        return new ResponseEntity(userService.register(request), HttpStatus.OK);
+        if (settingsService.getGlobalSettings().isMultiuserMode() == true) {
+            return new ResponseEntity(userService.register(request), HttpStatus.OK);
+        }
+        else return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
 
 
@@ -88,6 +96,15 @@ public class ApiAuthController {
     public ResponseEntity changePassword(@RequestBody ChangePasswordRequest request) {
 
         return ResponseEntity.ok(userService.changePassword(request));
+    }
+
+    @GetMapping("/logout")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity logout() {
+
+        SecurityContextHolder.getContext().setAuthentication(null);
+
+        return ResponseEntity.ok(new Result(true));
     }
 
 }

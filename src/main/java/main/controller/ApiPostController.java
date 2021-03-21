@@ -1,6 +1,8 @@
 package main.controller;
 
 import main.api.request.AddPostRequest;
+import main.api.request.EditPostRequest;
+import main.api.request.VoteRequest;
 import main.api.response.ApiPostResponseById;
 import main.api.response.ErrorResponse;
 import main.api.response.Result;
@@ -12,7 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/post")
@@ -127,45 +128,38 @@ public class ApiPostController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity editSomeData(
+    public ResponseEntity editPost(
             @PathVariable int id,
-            @RequestParam() long timestamp,
-            @RequestParam() int active,
-            @RequestParam() String title,
-            @RequestParam() List<String> tags,
-            @RequestParam() String text) {
+            @RequestBody EditPostRequest request) {
 
         ErrorResponse response = new ErrorResponse(false, new HashMap<>());
 
-        if (title == null) {
-            response.getErrors().put("title", "Заголовок отсутствует");
-            return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
-        }
-        if (title.length() < 3) {
+        if (request.getTitle() != null && request.getTitle().length() < 3) {
             response.getErrors().put("title", "Заголовок слишком короткий");
             return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
         }
-        if (text.length() < 50) {
+        if (request.getText() != null && request.getText().length() < 50) {
             response.getErrors().put("text", "Текс публикации слишком короткий");
             return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
         }
 
-        return ResponseEntity.ok(postService.editPost(id, timestamp, active, title, tags, text));
+        return ResponseEntity.ok(postService.editPost(id, request.getTimestamp(), request.getActive(),
+                request.getTitle(), request.getTags(), request.getText()));
 
     }
 
     @PostMapping("/like")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity likePost(@RequestParam("post_id") int postId) {
+    public ResponseEntity likePost(@RequestBody VoteRequest request) {
 
-        return ResponseEntity.ok(postService.likePost(postId));
+        return ResponseEntity.ok(postService.likePost(request.getPostId()));
     }
 
     @PostMapping("/dislike")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity dislikePost(@RequestParam("post_id") int postId) {
+    public ResponseEntity dislikePost(@RequestBody VoteRequest request) {
 
-        return ResponseEntity.ok(new Result(true));
+        return ResponseEntity.ok(postService.dislikePost(request.getPostId()));
     }
 
 

@@ -1,12 +1,18 @@
 package main.api.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
 public class SettingsRequest {
 
-    private boolean MULTIUSER_MODE;
-    private boolean POST_PREMODERATION;
-    private boolean STATISTICS_IS_PUBLIC;
+    @JsonProperty("MULTIUSER_MODE")
+    private boolean multiuserMode;
+
+    @JsonProperty("POST_PREMODERATION")
+    private boolean postPremoderation;
+
+    @JsonProperty("STATISTICS_IS_PUBLIC")
+    private boolean statisticsIsPublic;
 
 }

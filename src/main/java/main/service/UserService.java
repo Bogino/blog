@@ -15,10 +15,19 @@ import main.model.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -41,13 +50,15 @@ public class UserService {
     public JavaMailSender emailSender;
 
 
-    public UserService(UserRepository userRepository, CaptchaRepository captchaRepository, PostRepository postRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, CaptchaRepository captchaRepository,
+                       PostRepository postRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.captchaRepository = captchaRepository;
         this.postRepository = postRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     public LoginResponse getLoginResponse(String email) {
         main.model.User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException(email));
@@ -56,7 +67,7 @@ public class UserService {
         userResponse.setEmail(currentUser.getEmail());
         userResponse.setName(currentUser.getName());
         userResponse.setModeration(currentUser.getIsModerator() == 1);
-        if (currentUser.getIsModerator() == 1){
+        if (currentUser.getIsModerator() == 1) {
             List<Post> newPosts = postRepository.getNewPosts();
             userResponse.setModerationCount(newPosts.size());
         }
@@ -70,6 +81,7 @@ public class UserService {
         return loginResponse;
     }
 
+    @Transactional
     public CaptchaImageResponse getCaptcha() {
 
         Cage cage = new GCage();
@@ -117,7 +129,9 @@ public class UserService {
 
     }
 
+    @Transactional
     public Result register(RegisterRequest request) {
+
         Pattern eMailPattern = Pattern.compile("[a-z0-9]+@[a-z]+\\.[a-z]+");
         Pattern passwordPattern = Pattern.compile(".{6,}");
         Pattern namePattern = Pattern.compile("[a-zA-Zа-яА-Я\\-\\s]+");
@@ -159,6 +173,7 @@ public class UserService {
 
     }
 
+    @Transactional
     public Result restore(EmailRestoreRequest request) {
 
         Result result = new Result(true);
@@ -202,6 +217,8 @@ public class UserService {
 
     }
 
+
+    @Transactional
     public Result changePassword(ChangePasswordRequest request) {
 
         User user = userRepository.findByCode(request.getCode()).orElseThrow();
@@ -237,6 +254,117 @@ public class UserService {
         return new Result(true);
 
     }
+
+
+    @Transactional
+    public Result updateProfile(String email,
+                                String name,
+                                String password,
+                                int removePhoto){
+
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        if (email != null) {
+            user.setEmail(email);
+        }
+        if (name != null) {
+            user.setName(name);
+        }
+        if (password != null) {
+            user.setPassword(password);
+        }
+        if (removePhoto == 1) {
+            user.setPhoto(null);
+        }
+        userRepository.save(user);
+
+        return new Result(true);
+
+    }
+
+
+    @Transactional
+    public Result getPostProfileMy(MultipartFile photo,
+                                   String email,
+                                   String name,
+                                   String password,
+                                   String removePhoto) {
+
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        String path = null;
+        try {
+            ImageIO.read(photo.getInputStream());
+        } catch (IOException e) {
+            ErrorResponse imageUploadErrorResponse = new ErrorResponse(false, new HashMap<>());
+            imageUploadErrorResponse.getErrors().put("image", "Неверный формат файла");
+            return imageUploadErrorResponse;
+        }
+
+        InputStream in = null;
+        try {
+            in = photo.getInputStream();
+
+            byte[] array = new byte[256];
+
+            new Random().nextBytes(array);
+
+            String randomString = new String(array, Charset.forName("UTF-8"));
+
+            StringBuffer sb = new StringBuffer();
+
+            String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
+
+            int n = 6;
+
+            for (int k = 0; k < AlphaNumericString.length(); k++) {
+
+                if (Character.isLetter(AlphaNumericString.charAt(k)) && (n > 0) || Character.isDigit(AlphaNumericString.charAt(k)) && (n > 0)) {
+
+                    sb.append(AlphaNumericString.charAt(k));
+                    n--;
+                }
+            }
+
+
+            File currDir = new File("upload/" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6));
+            currDir.mkdirs();
+            path = currDir.getPath();
+            FileOutputStream f = new FileOutputStream(
+                    path + "/" + photo.getOriginalFilename());
+            int ch;
+            while ((ch = in.read()) != -1) {
+                f.write(ch);
+            }
+
+            f.flush();
+            f.close();
+
+            user.setPhoto(path + "\\" + photo.getOriginalFilename());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (email != null) {
+            user.setEmail(email);
+        }
+        if (name != null) {
+            user.setName(name);
+        }
+        if (password != null) {
+            user.setPassword(password);
+        }
+        if (removePhoto != null) {
+            user.setPhoto(null);
+        }
+        userRepository.save(user);
+
+        return new Result(true);
+    }
+
 
 //    public Result editProfile(EditProfileRequest request){
 //
