@@ -27,6 +27,7 @@ public class PostComment {
 
     private Date time;
 
+    @Column(columnDefinition = "Text")
     private String text;
 
 }

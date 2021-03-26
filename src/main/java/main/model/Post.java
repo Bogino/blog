@@ -36,6 +36,7 @@ public class Post {
     @OneToMany(mappedBy = "post")
     private Set<Tag2Post> tag2Posts = new HashSet<>();
 
+    @Column(columnDefinition = "Text")
     private String text;
 
     @Column(name = "view_count")

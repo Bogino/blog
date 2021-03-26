@@ -318,15 +318,6 @@ public class PostService {
             Tag tag = new Tag();
             tag.setName(tagName);
             tagRepository.save(tag);
-            Tag2Post tag2Post = new Tag2Post();
-            tag2Post.setPost(post);
-            tag2Post.setTag(tag);
-            Tag2PostKey key = new Tag2PostKey();
-            key.setPostId(post.getId());
-            key.setTagId(tag.getId());
-            tag2Post.setTag2PostKey(key);
-            tag2PostRepository.save(tag2Post);
-            post.getTag2Posts().add(tag2Post);
         }
 
         postRepository.save(post);
@@ -492,7 +483,7 @@ public class PostService {
     public Result moderate(PostModerationRequest request) {
 
         Result result = new Result(true);
-        Post post = postRepository.findById(request.getPostId()).orElseThrow();
+        Post post = postRepository.findByPostId(request.getPostId()).orElseThrow();
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();

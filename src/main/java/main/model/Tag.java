@@ -3,6 +3,7 @@ package main.model;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -17,6 +18,6 @@ public class Tag {
     private String name;
 
     @OneToMany(mappedBy = "tag")
-    private Set<Tag2Post> tag2Posts;
+    private Set<Tag2Post> tag2Posts = new HashSet<>();
 
 }

@@ -2,6 +2,7 @@ package main.service;
 
 import com.github.cage.Cage;
 import com.github.cage.GCage;
+import main.api.mail.MyConstants;
 import main.api.request.ChangePasswordRequest;
 import main.api.request.EmailRestoreRequest;
 import main.api.request.RegisterRequest;
@@ -178,8 +179,9 @@ public class UserService {
 
         Result result = new Result(true);
 
-        // Create a Simple MailMessage.
         SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setFrom(MyConstants.MY_EMAIL);
 
         message.setTo(userRepository.findByEmail(request.getEmail()).orElseThrow().getEmail());
         message.setSubject("Restoring password");
@@ -210,7 +212,7 @@ public class UserService {
         userRepository.save(user);
         message.setText("/login/change-password/" + sb.toString());
 
-        // Send Message!
+
         this.emailSender.send(message);
 
         return result;

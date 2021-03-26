@@ -29,6 +29,7 @@ public class User {
 
     private String code;
 
+    @Column(columnDefinition = "Text")
     private String photo;
 
     public Role getRole(){
