@@ -13,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -288,6 +290,23 @@ public class PostService {
 
     @Transactional
     public Result addPost(long timestamp, int active, String title, List<String> tags, String text) {
+
+        ErrorResponse response = new ErrorResponse(false, new HashMap<>());
+
+        if (title == null) {
+            response.getErrors().put("title", "Заголовок отсутствует");
+        }
+        if (title.length() < 3) {
+            response.getErrors().put("title", "Заголовок слишком короткий");
+        }
+        if (text.length() < 50) {
+            response.getErrors().put("text", "Текст публикации слишком короткий");
+        }
+
+        if (response.getErrors().size() > 0) {
+            return response;
+        }
+
         Post post = new Post();
         Date date = null;
         Result result = new Result(true);
@@ -314,12 +333,36 @@ public class PostService {
 
         post.setUserId(user);
 
-        for (String tagName : tags) {
-            Tag tag = new Tag();
-            tag.setName(tagName);
-            tagRepository.save(tag);
-        }
 
+        if (tags.size() != 0) {
+            for (String tagName : tags) {
+                Tag tag = tagRepository.findByName(tagName);
+                if (tag != null) {
+                    Tag2Post tag2Post = new Tag2Post();
+                    tag2Post.setTag(tag);
+                    tag2Post.setPost(post);
+                    Tag2PostKey tag2PostKey = new Tag2PostKey();
+                    tag2PostKey.setTagId(tag.getId());
+                    tag2PostKey.setPostId(post.getId());
+                    tag2Post.setTag2PostKey(tag2PostKey);
+                    tag2PostRepository.save(tag2Post);
+                    tagRepository.save(tag);
+                }
+                else {
+                    tag = new Tag();
+                    tag.setName(tagName);
+                    Tag2Post tag2Post = new Tag2Post();
+                    tag2Post.setTag(tag);
+                    tag2Post.setPost(post);
+                    Tag2PostKey tag2PostKey = new Tag2PostKey();
+                    tag2PostKey.setTagId(tag.getId());
+                    tag2PostKey.setPostId(post.getId());
+                    tag2Post.setTag2PostKey(tag2PostKey);
+                    tag2PostRepository.save(tag2Post);
+                    tagRepository.save(tag);
+                }
+            }
+        }
         postRepository.save(post);
 
 
@@ -329,6 +372,19 @@ public class PostService {
     @Transactional
     public Result editPost(int id, long timestamp, int active, String title, List<String> tags, String text) {
 
+        ErrorResponse response = new ErrorResponse(false, new HashMap<>());
+
+        if (title != null && title.length() < 3) {
+            response.setResult(true);
+            response.getErrors().put("title", "Заголовок слишком короткий");
+        }
+        if (text != null && text.length() < 50) {
+            response.setResult(true);
+            response.getErrors().put("text", "Текст публикации слишком короткий");
+        }
+
+        if (response.getErrors().size() != 0)
+            return response;
 
         Post post = postRepository.findByIdAcceptedPost(id).orElseThrow();
         Date date = null;
@@ -337,30 +393,32 @@ public class PostService {
         if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
             date = new Date(timestamp);
         }
+
         if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
             date = new Date();
         }
-        Set<Tag2Post> tag2PostSet = new HashSet<>();
+
         post.setIsActive(active);
+
         if (text != null)
             post.setText(text);
         post.setTime(date);
+
         if (title != null)
             post.setTitle(title);
         post.setStatus(ModerationStatus.valueOf("NEW"));
+
         for (String tagName : tags) {
             Tag tag = new Tag();
             tag.setName(tagName);
-            Tag2Post tag2Post = new Tag2Post();
-            tag2Post.setPost(post);
-            tag2Post.setTag(tag);
-            tag2PostSet.add(tag2Post);
+            tagRepository.save(tag);
         }
-        post.setTag2Posts(tag2PostSet);
+
 
         postRepository.save(post);
 
         return result;
+
 
     }
 
@@ -452,7 +510,8 @@ public class PostService {
     }
 
     @Transactional
-    public int addComment(AddCommentRequest request) throws NullPointerCommentTextException, NotFoundParentCommentException {
+    public int addComment(AddCommentRequest request) throws
+            NullPointerCommentTextException, NotFoundParentCommentException {
 
         if (request.getText() == null) {
 
@@ -510,7 +569,7 @@ public class PostService {
 
         Post post = postRepository.findById(postId).orElseThrow();
 
-        PostVote postVote = postVoteRepository.findByUserId(user);
+        PostVote postVote = postVoteRepository.findByUserIdAndPostId(post, user);
 
         if (postVote == null) {
             postVote = new PostVote();
@@ -539,9 +598,9 @@ public class PostService {
 
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
-        PostVote postVote = postVoteRepository.findByUserId(user);
-
         Post post = postRepository.findById(postId).orElseThrow();
+
+        PostVote postVote = postVoteRepository.findByUserIdAndPostId(post, user);
 
         if (postVote == null) {
             postVote = new PostVote();

@@ -23,4 +23,6 @@ public interface TagRepository extends JpaRepository<Tag, Integer> {
     Tag getTagWithMaxPostsCount();
 
 
+    @Query(value = "SELECT * FROM tags WHERE name = ?1", nativeQuery = true)
+    Tag findByName(String name);
 }

@@ -17,6 +17,8 @@ public interface PostVoteRepository extends JpaRepository<PostVote, Integer> {
     @Query(value = "select pv from PostVote pv where pv.postId = ?1")
     List<PostVote> findByPost(Post post);
 
-    PostVote findByUserId(User userId);
+   PostVote findByUserId(User userId);
 
+    @Query(value = "select pv from PostVote pv where pv.postId = ?1 and pv.userId = ?2")
+    PostVote findByUserIdAndPostId(Post post, User user);
 }

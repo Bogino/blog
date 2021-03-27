@@ -1,5 +1,6 @@
 package main.model;
 import lombok.Data;
+
 import javax.persistence.*;
 import java.util.Date;
 import java.util.HashSet;
@@ -33,14 +34,16 @@ public class Post {
 
     private String title;
 
-    @OneToMany(mappedBy = "post")
-    private Set<Tag2Post> tag2Posts = new HashSet<>();
-
     @Column(columnDefinition = "Text")
     private String text;
 
     @Column(name = "view_count")
     private int viewCount;
+
+
+    @OneToMany(mappedBy = "post")
+    Set<Tag2Post> tag2PostSet = new HashSet<>();
+
 
     public void setViewCount(int viewCount) {
         this.viewCount += viewCount;

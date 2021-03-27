@@ -106,21 +106,6 @@ public class ApiPostController {
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity addPost(@RequestBody AddPostRequest request) {
 
-        ErrorResponse response = new ErrorResponse(false, new HashMap<>());
-
-        if (request.getTitle() == null) {
-            response.getErrors().put("title", "Заголовок отсутствует");
-        }
-        if (request.getTitle().length() < 3) {
-            response.getErrors().put("title", "Заголовок слишком короткий");
-        }
-        if (request.getText().length() < 50) {
-            response.getErrors().put("text", "Текс публикации слишком короткий");
-        }
-
-        if(response.getErrors().size() > 0){
-            return ResponseEntity.ok(response);
-        }
 
         return ResponseEntity.ok(postService.addPost(request.getTimestamp(),
                 request.getActive(), request.getTitle(), request.getTags(), request.getText()));
@@ -132,16 +117,6 @@ public class ApiPostController {
             @PathVariable int id,
             @RequestBody EditPostRequest request) {
 
-        ErrorResponse response = new ErrorResponse(false, new HashMap<>());
-
-        if (request.getTitle() != null && request.getTitle().length() < 3) {
-            response.getErrors().put("title", "Заголовок слишком короткий");
-            return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
-        }
-        if (request.getText() != null && request.getText().length() < 50) {
-            response.getErrors().put("text", "Текс публикации слишком короткий");
-            return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
-        }
 
         return ResponseEntity.ok(postService.editPost(id, request.getTimestamp(), request.getActive(),
                 request.getTitle(), request.getTags(), request.getText()));

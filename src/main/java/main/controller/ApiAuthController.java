@@ -80,7 +80,7 @@ public class ApiAuthController {
         if (settingsService.getGlobalSettings().isMultiuserMode() == true) {
             return new ResponseEntity(userService.register(request), HttpStatus.OK);
         }
-        else return new ResponseEntity(HttpStatus.NOT_FOUND);
+        else return new ResponseEntity(HttpStatus.OK);
     }
 
 

@@ -13,22 +13,7 @@ insert into posts (is_active, moderation_status, text, time, title, view_count, 
 
 insert into post_comments (parent_id, post_id, text, time, user_id) values(NULL, 1, "Хороший пост, мне очень нравится между прочим, это Люба говорит", CURRENT_DATE, 1), (1, 1, "Cогласен с тобой", CURRENT_DATE, 2);
 
-insert into tags (name) values("Программирование"), ("Back-end"), ("Хавчик");
-
-insert into tag2post (post_id, tag_id) values(1, 1), (1, 2), (2, 1), (2, 2), (3, 3);
-
 insert into post_votes (post_id, time, value, user_id) values(1, CURRENT_DATE, 1, 2), (2, CURRENT_DATE, 1, 2), (3, CURRENT_DATE, 1, 2), (4, CURRENT_DATE, 1, 2), (5, CURRENT_DATE, 1, 2),
 (6, CURRENT_DATE, 1, 1);
 
-
-
-
-
-
-
-
-
-
-
-
-
+insert into global_settings (code, name, value) values("YES", "YES", "YES");

@@ -17,7 +17,13 @@ public class Tag {
 
     private String name;
 
+//    @ManyToMany(cascade = CascadeType.ALL)
+//    @JoinTable(name = "tag2post",
+//            joinColumns = {@JoinColumn(name = "tag_id")},
+//            inverseJoinColumns = {@JoinColumn(name = "post_id")})
+//    private Set<Post> tag2Posts = new HashSet<>();
+
     @OneToMany(mappedBy = "tag")
-    private Set<Tag2Post> tag2Posts = new HashSet<>();
+    Set<Tag2Post> tag2PostSet = new HashSet<>();
 
 }
