@@ -1,13 +1,9 @@
 package main.model;
 
-import lombok.Data;
-
 import javax.persistence.*;
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Data
 @Table(name = "tags")
 public class Tag {
 
@@ -17,13 +13,31 @@ public class Tag {
 
     private String name;
 
-//    @ManyToMany(cascade = CascadeType.ALL)
-//    @JoinTable(name = "tag2post",
-//            joinColumns = {@JoinColumn(name = "tag_id")},
-//            inverseJoinColumns = {@JoinColumn(name = "post_id")})
-//    private Set<Post> tag2Posts = new HashSet<>();
 
-    @OneToMany(mappedBy = "tag")
-    Set<Tag2Post> tag2PostSet = new HashSet<>();
+    @ManyToMany(mappedBy = "tags")
+    Set<Post> posts;
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Set<Post> getPosts() {
+        return posts;
+    }
+
+    public void setPosts(Set<Post> posts) {
+        this.posts = posts;
+    }
 }

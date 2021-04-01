@@ -13,8 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -39,23 +37,21 @@ public class PostService {
     @Autowired
     private final PostCommentRepository postCommentRepository;
 
-    @Autowired
-    private final TagRepository tagRepository;
 
     @Autowired
-    private final Tag2PostRepository tag2PostRepository;
+    private final TagRepository tagRepository;
 
     private final SettingsService settingsService;
 
     private long count = 0;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, Tag2PostRepository tag2PostRepository, SettingsService settingsService) {
+    public PostService(PostRepository postRepository, UserRepository userRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, SettingsService settingsService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.postVoteRepository = postVoteRepository;
         this.postCommentRepository = postCommentRepository;
+
         this.tagRepository = tagRepository;
-        this.tag2PostRepository = tag2PostRepository;
         this.settingsService = settingsService;
     }
 
@@ -291,23 +287,14 @@ public class PostService {
     @Transactional
     public Result addPost(long timestamp, int active, String title, List<String> tags, String text) {
 
-        ErrorResponse response = new ErrorResponse(false, new HashMap<>());
+        Map<String, String> errors = checkErrors(title, text);
 
-        if (title == null) {
-            response.getErrors().put("title", "Заголовок отсутствует");
-        }
-        if (title.length() < 3) {
-            response.getErrors().put("title", "Заголовок слишком короткий");
-        }
-        if (text.length() < 50) {
-            response.getErrors().put("text", "Текст публикации слишком короткий");
-        }
-
-        if (response.getErrors().size() > 0) {
-            return response;
+        if (!errors.isEmpty()) {
+            return new ErrorResponse(false, errors);
         }
 
         Post post = new Post();
+
         Date date = null;
         Result result = new Result(true);
 
@@ -317,15 +304,19 @@ public class PostService {
         if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
             date = new Date();
         }
+
+        if (settingsService.getGlobalSettings().isPostPremoderation()) {
+            post.setStatus(ModerationStatus.valueOf("NEW"));
+        } else if (post.getIsActive() == 1) {
+            post.setStatus(ModerationStatus.ACCEPTED);
+        }
+
         post.setTime(date);
         post.setIsActive(active);
         post.setTitle(title);
         post.setText(text);
-        if (settingsService.getGlobalSettings().isPostPremoderation() == true)
-            post.setStatus(ModerationStatus.valueOf("NEW"));
-        else if (post.getIsActive() == 1)
-            post.setStatus(ModerationStatus.ACCEPTED);
         post.setViewCount(0);
+
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
@@ -336,30 +327,16 @@ public class PostService {
 
         if (tags.size() != 0) {
             for (String tagName : tags) {
+
                 Tag tag = tagRepository.findByName(tagName);
                 if (tag != null) {
-                    Tag2Post tag2Post = new Tag2Post();
-                    tag2Post.setTag(tag);
-                    tag2Post.setPost(post);
-                    Tag2PostKey tag2PostKey = new Tag2PostKey();
-                    tag2PostKey.setTagId(tag.getId());
-                    tag2PostKey.setPostId(post.getId());
-                    tag2Post.setTag2PostKey(tag2PostKey);
-                    tag2PostRepository.save(tag2Post);
-                    tagRepository.save(tag);
-                }
-                else {
-                    tag = new Tag();
-                    tag.setName(tagName);
-                    Tag2Post tag2Post = new Tag2Post();
-                    tag2Post.setTag(tag);
-                    tag2Post.setPost(post);
-                    Tag2PostKey tag2PostKey = new Tag2PostKey();
-                    tag2PostKey.setTagId(tag.getId());
-                    tag2PostKey.setPostId(post.getId());
-                    tag2Post.setTag2PostKey(tag2PostKey);
-                    tag2PostRepository.save(tag2Post);
-                    tagRepository.save(tag);
+                    post.getTags().add(tag);
+                } else {
+                    Tag newTag = new Tag();
+                    newTag.setName(tagName);
+                    tagRepository.save(newTag);
+                    post.getTags().add(newTag);
+
                 }
             }
         }
@@ -369,22 +346,15 @@ public class PostService {
         return result;
     }
 
+
     @Transactional
     public Result editPost(int id, long timestamp, int active, String title, List<String> tags, String text) {
 
-        ErrorResponse response = new ErrorResponse(false, new HashMap<>());
+        ErrorResponse response = new ErrorResponse(false, checkErrors(title, text));
 
-        if (title != null && title.length() < 3) {
-            response.setResult(true);
-            response.getErrors().put("title", "Заголовок слишком короткий");
-        }
-        if (text != null && text.length() < 50) {
-            response.setResult(true);
-            response.getErrors().put("text", "Текст публикации слишком короткий");
-        }
-
-        if (response.getErrors().size() != 0)
+        if (!response.getErrors().isEmpty()) {
             return response;
+        }
 
         Post post = postRepository.findByIdAcceptedPost(id).orElseThrow();
         Date date = null;
@@ -408,10 +378,20 @@ public class PostService {
             post.setTitle(title);
         post.setStatus(ModerationStatus.valueOf("NEW"));
 
-        for (String tagName : tags) {
-            Tag tag = new Tag();
-            tag.setName(tagName);
-            tagRepository.save(tag);
+        if (tags.size() != 0) {
+            for (String tagName : tags) {
+
+                Tag tag = tagRepository.findByName(tagName);
+                if (tag != null) {
+                    post.getTags().add(tag);
+                } else {
+                    Tag newTag = new Tag();
+                    newTag.setName(tagName);
+                    tagRepository.save(newTag);
+                    post.getTags().add(newTag);
+
+                }
+            }
         }
 
 
@@ -620,6 +600,23 @@ public class PostService {
 
         return new Result(true);
 
+    }
+
+    private Map<String, String> checkErrors(String title, String text) {
+
+        Map<String, String> errors = new HashMap<>();
+
+        if (title == null) {
+            errors.put("title", "Заголовок отсутствует");
+        }
+        if (title.length() < 3) {
+            errors.put("title", "Заголовок слишком короткий");
+        }
+        if (text.length() < 50) {
+            errors.put("text", "Текст публикации слишком короткий");
+        }
+
+        return errors;
     }
 
 

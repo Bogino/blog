@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TagRepository extends JpaRepository<Tag, Integer> {
@@ -14,13 +15,13 @@ public interface TagRepository extends JpaRepository<Tag, Integer> {
     List<Tag> findByNameContaining(String name);
 
     @Query(value = "SELECT name FROM tags \n" +
-            "JOIN tag2post ON tag2post.tag_id = tags.id\n" +
-            "JOIN posts ON posts.id = tag2post.post_id\n" +
+            "JOIN posts_tags ON posts_tags.tags_id = tags.id\n" +
+            "JOIN posts ON posts.id = posts_tags.posts_id\n" +
             "WHERE posts.id = ?1", nativeQuery = true)
     List<String> findByPostId(int postId);
 
-    @Query(value = "SELECT * FROM tags t ORDER BY (SELECT COUNT(*) FROM tag2post t2p WHERE t2p.tag_id = t.id) DESC LIMIT 1", nativeQuery = true)
-    Tag getTagWithMaxPostsCount();
+    @Query(value = "SELECT * FROM tags t ORDER BY (SELECT COUNT(*) FROM posts_tags pt WHERE pt.tags_id = t.id) DESC LIMIT 1", nativeQuery = true)
+    Optional<Tag> getTagWithMaxPostsCount();
 
 
     @Query(value = "SELECT * FROM tags WHERE name = ?1", nativeQuery = true)

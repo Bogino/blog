@@ -12,6 +12,6 @@ public class AddPostRequest {
     private long timestamp;
     private int active;
     private String title;
-    private ArrayList<String> tags = new ArrayList<>();
+    private ArrayList<String> tags;
     private String text;
 }

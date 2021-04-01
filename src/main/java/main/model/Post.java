@@ -1,5 +1,4 @@
 package main.model;
-import lombok.Data;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -7,7 +6,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Data
 @Table(name = "posts")
 public class Post {
 
@@ -41,11 +39,93 @@ public class Post {
     private int viewCount;
 
 
-    @OneToMany(mappedBy = "post")
-    Set<Tag2Post> tag2PostSet = new HashSet<>();
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "posts_tags",
+            joinColumns = {@JoinColumn(name = "posts_id")},
+            inverseJoinColumns = {@JoinColumn(name = "tags_id")}
+    )
+    Set<Tag> tags = new HashSet<>();
 
 
     public void setViewCount(int viewCount) {
         this.viewCount += viewCount;
+    }
+
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(int isActive) {
+        this.isActive = isActive;
+    }
+
+    public ModerationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ModerationStatus status) {
+        this.status = status;
+    }
+
+    public User getModeratorId() {
+        return moderatorId;
+    }
+
+    public void setModeratorId(User moderatorId) {
+        this.moderatorId = moderatorId;
+    }
+
+    public User getUserId() {
+        return userId;
+    }
+
+    public void setUserId(User userId) {
+        this.userId = userId;
+    }
+
+    public Date getTime() {
+        return time;
+    }
+
+    public void setTime(Date time) {
+        this.time = time;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public int getViewCount() {
+        return viewCount;
+    }
+
+    public Set<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
     }
 }

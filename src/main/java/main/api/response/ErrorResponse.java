@@ -1,22 +1,18 @@
 package main.api.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
-import java.util.HashMap;
+import java.util.Map;
 
 
-public class ErrorResponse extends Result{
+public class ErrorResponse extends Result {
 
-    private boolean result;
-    private HashMap<String, String> errors;
+    private Map<String, String> errors;
 
-    public ErrorResponse(boolean result, HashMap<String, String> errors) {
+    public ErrorResponse(boolean result, Map<String, String> errors) {
         super(result);
         this.errors = errors;
     }
 
-    public HashMap<String, String> getErrors(){
+    public Map<String, String> getErrors() {
         return errors;
     }
 }

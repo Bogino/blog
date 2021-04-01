@@ -25,11 +25,16 @@ public class TagService {
         this.postRepository = postRepository;
     }
 
-    public ApiTagResponse getTags(){
+    public ApiTagResponse getTags() {
 
         List<Tag> tags = tagRepository.findAll();
+        if (tags.isEmpty())
+
+            return new ApiTagResponse();
+
         double totalPosts = postRepository.getAllAcceptedPosts().size();
-        double countMaxPostsByTag = postRepository.getCountPostsByTagName(tagRepository.getTagWithMaxPostsCount().getName());
+        Tag tagWithMaxPosts = tagRepository.getTagWithMaxPostsCount().orElseThrow();
+        double countMaxPostsByTag = postRepository.getCountPostsByTagName(tagWithMaxPosts.getName());
         double weight = countMaxPostsByTag / totalPosts;
         double factor = 1.0 / weight;
 
@@ -44,11 +49,16 @@ public class TagService {
 
     }
 
-    public ApiTagResponse getTagsByQuery(String query){
+    public ApiTagResponse getTagsByQuery(String query) {
         List<Tag> tags = tagRepository.findByNameContaining(query);
 
+        if (tags.isEmpty())
+
+            return new ApiTagResponse();
+
+        Tag tagWithMaxPosts = tagRepository.getTagWithMaxPostsCount().orElseThrow();
         double totalPosts = postRepository.getAllAcceptedPosts().size();
-        double countMaxPostsByTag = postRepository.getCountPostsByTagName(tagRepository.getTagWithMaxPostsCount().getName());
+        double countMaxPostsByTag = postRepository.getCountPostsByTagName(tagWithMaxPosts.getName());
         double weight = countMaxPostsByTag / totalPosts;
         double factor = 1.0 / weight;
 

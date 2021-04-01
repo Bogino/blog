@@ -30,8 +30,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     Page<Post> findByDate(String time, Pageable pageable);
 
     @Query(value = "SELECT * FROM posts \n" +
-            "JOIN tag2post ON posts.id = tag2post.post_id\n" +
-            "JOIN tags ON tags.id = tag2post.tag_id\n" +
+            "JOIN posts_tags ON posts.id = posts_tags.posts_id\n" +
+            "JOIN tags ON tags.id = posts_tags.tags_id\n" +
             "WHERE tags.name = ?1 AND time <= NOW() AND moderation_status = 'ACCEPTED'", nativeQuery = true)
     Page<Post> findByTagName(String name, Pageable pageable);
 
@@ -46,8 +46,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
 
     @Query(value = "SELECT COUNT(*) FROM posts\n" +
-            "JOIN tag2post ON posts.id = tag2post.post_id\n" +
-            "JOIN tags ON tags.id = tag2post.tag_id\n" +
+            "JOIN posts_tags ON posts.id = posts_tags.posts_id\n" +
+            "JOIN tags ON tags.id = posts_tags.tags_id\n" +
             "WHERE tags.name = ?1", nativeQuery = true)
     int getCountPostsByTagName(String name);
 
