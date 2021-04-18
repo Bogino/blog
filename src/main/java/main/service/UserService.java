@@ -13,7 +13,10 @@ import main.model.User;
 import main.model.repository.CaptchaRepository;
 import main.model.repository.PostRepository;
 import main.model.repository.UserRepository;
+import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,12 +28,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Service
@@ -291,7 +297,7 @@ public class UserService {
                                    String email,
                                    String name,
                                    String password,
-                                   String removePhoto) {
+                                   int removePhoto) {
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
@@ -305,9 +311,9 @@ public class UserService {
             return imageUploadErrorResponse;
         }
 
-        InputStream in = null;
+
         try {
-            in = photo.getInputStream();
+
 
             byte[] array = new byte[256];
 
@@ -331,24 +337,18 @@ public class UserService {
             }
 
 
-            File currDir = new File("/upload/" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6));
+            File currDir = new File("/upload/" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6) + "/" + photo.getOriginalFilename());
             currDir.mkdirs();
             path = currDir.getPath();
-            FileOutputStream f = new FileOutputStream(
-                    path + "/" + photo.getOriginalFilename());
-            int ch;
-            while ((ch = in.read()) != -1) {
-                f.write(ch);
-            }
 
-            f.flush();
-            f.close();
 
-            user.setPhoto(path + "\\" + photo.getOriginalFilename());
+            ImageIO.write(createResizedCopy(ImageIO.read(photo.getInputStream())),"jpg", currDir);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        user.setPhoto(path);
 
         if (email != null) {
             user.setEmail(email);
@@ -359,7 +359,7 @@ public class UserService {
         if (password != null) {
             user.setPassword(password);
         }
-        if (removePhoto != null) {
+        if (removePhoto != 0) {
             user.setPhoto(null);
         }
         userRepository.save(user);
@@ -409,4 +409,9 @@ public class UserService {
 //        return result;
 //
 //    }
+
+    public BufferedImage createResizedCopy(BufferedImage myImage){
+        BufferedImage scaledImage = Scalr.resize(myImage, 36,36);
+        return scaledImage;
+    }
 }
