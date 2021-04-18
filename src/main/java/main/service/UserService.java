@@ -331,7 +331,7 @@ public class UserService {
             }
 
 
-            File currDir = new File("upload/" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6));
+            File currDir = new File("/upload/" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6));
             currDir.mkdirs();
             path = currDir.getPath();
             FileOutputStream f = new FileOutputStream(

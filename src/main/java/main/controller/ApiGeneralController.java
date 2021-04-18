@@ -47,18 +47,15 @@ public class ApiGeneralController {
 
     private final InitResponse initResponse;
 
-    private final PasswordEncoder passwordEncoder;
-
     private final PostService postService;
 
     private final UserService userService;
 
 
-    public ApiGeneralController(SettingsService settingsService, TagService tagService, InitResponse initResponse, PasswordEncoder passwordEncoder, PostService postService, UserService userService) {
+    public ApiGeneralController(SettingsService settingsService, TagService tagService, InitResponse initResponse, PostService postService, UserService userService) {
         this.settingsService = settingsService;
         this.tagService = tagService;
         this.initResponse = initResponse;
-        this.passwordEncoder = passwordEncoder;
         this.postService = postService;
         this.userService = userService;
     }
@@ -128,7 +125,7 @@ public class ApiGeneralController {
             }
 
 
-            File currDir = new File("upload/" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6));
+            File currDir = new File("/upload/" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6));
             currDir.mkdirs();
             path = currDir.getPath();
             FileOutputStream f = new FileOutputStream(

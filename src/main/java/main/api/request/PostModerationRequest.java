@@ -8,6 +8,10 @@ import lombok.Data;
 @Data
 public class PostModerationRequest {
 
+    public PostModerationRequest(){
+        super();
+    }
+
     @JsonProperty("post_id")
     private int postId;
 

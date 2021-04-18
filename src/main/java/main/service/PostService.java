@@ -501,6 +501,10 @@ public class PostService {
 
         PostComment comment = new PostComment();
 
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
         if (request.getParentId() != 0) {
 
             int parentId = postRepository.findByIdAcceptedPost(request.getParentId()).orElseThrow(() -> new NotFoundParentCommentException()).getId();
@@ -509,7 +513,7 @@ public class PostService {
         }
 
         comment.setTime(new Date());
-        comment.setUserId(userRepository.findById(postRepository.findUserIdByPostId(request.getPostId())).orElseThrow());
+        comment.setUserId(user);
         comment.setText(request.getText());
         comment.setPostId(postRepository.findByIdAcceptedPost(request.getPostId()).orElseThrow());
         postCommentRepository.save(comment);
