@@ -337,10 +337,11 @@ public class UserService {
             }
 
 
-            File currDir = new File("/upload/" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6) + "/" + photo.getOriginalFilename());
+            File currDir = new File("C:\\Users\\Vladimir\\Desktop\\Diploma\\blog\\src\\main\\resources\\upload\\" + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6) + "/" + photo.getOriginalFilename());
             currDir.mkdirs();
             path = currDir.getPath();
-
+            String[] strings = path.split("resources");
+            user.setPhoto(strings[1]);
 
             ImageIO.write(createResizedCopy(ImageIO.read(photo.getInputStream())),"jpg", currDir);
 
@@ -348,7 +349,7 @@ public class UserService {
             e.printStackTrace();
         }
 
-        user.setPhoto(path);
+        //user.setPhoto(path);
 
         if (email != null) {
             user.setEmail(email);
