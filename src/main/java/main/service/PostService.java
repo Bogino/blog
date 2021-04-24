@@ -3,7 +3,6 @@ package main.service;
 import main.api.request.AddCommentRequest;
 import main.api.request.PostModerationRequest;
 import main.api.response.*;
-import main.exception.NotFoundParentCommentException;
 import main.exception.NullPointerCommentTextException;
 import main.exception.PostNotFoundException;
 import main.model.*;
@@ -490,8 +489,7 @@ public class PostService {
     }
 
     @Transactional
-    public int addComment(AddCommentRequest request) throws
-            NullPointerCommentTextException, NotFoundParentCommentException {
+    public int addComment(AddCommentRequest request) throws NullPointerCommentTextException {
 
         if (request.getText() == null) {
 
@@ -501,16 +499,18 @@ public class PostService {
 
         PostComment comment = new PostComment();
 
+        if (request.getParentId() != 0) {
+
+            comment = postCommentRepository.findById(request.getParentId()).orElseThrow();
+
+        }
+
+
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
-        if (request.getParentId() != 0) {
 
-            int parentId = postRepository.findByIdAcceptedPost(request.getParentId()).orElseThrow(() -> new NotFoundParentCommentException()).getId();
-            comment.setParentId(parentId);
-
-        }
 
         comment.setTime(new Date());
         comment.setUserId(user);
@@ -551,7 +551,7 @@ public class PostService {
 
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
-        Post post = postRepository.findById(postId).orElseThrow();
+        Post post = postRepository.findByPostId(postId).orElseThrow();
 
         PostVote postVote = postVoteRepository.findByUserIdAndPostId(post, user);
 

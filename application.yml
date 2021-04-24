@@ -12,4 +12,5 @@ blog.phone: 8 999 777-44-33
 blog.email: mail@mail.ru
 blog.copyright: Богино Илья
 blog.copyrightFrom: 2020
+blog.upload.folder: upload/
 
