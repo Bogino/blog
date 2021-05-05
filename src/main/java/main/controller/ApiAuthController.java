@@ -12,10 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -25,37 +23,30 @@ import java.security.Principal;
 public class ApiAuthController {
 
 
-    private final AuthenticationManager authenticationManager;
-
-
     private final UserService userService;
 
     private final SettingsService settingsService;
 
 
     @Autowired
-    public ApiAuthController(AuthenticationManager authenticationManager, UserService userService, SettingsService settingsService) {
-
-        this.authenticationManager = authenticationManager;
+    public ApiAuthController(UserService userService, SettingsService settingsService) {
 
         this.userService = userService;
         this.settingsService = settingsService;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity login(@RequestBody LoginRequest loginRequest) {
 
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+        try {
 
-        SecurityContextHolder.getContext().setAuthentication(auth);
+            return ResponseEntity.ok(userService.login(loginRequest));
 
-        org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) auth.getPrincipal();
-
-
-        return ResponseEntity.ok(userService.getLoginResponse(user.getUsername()));
+        } catch (UsernameNotFoundException e){
+            e.getMessage();
+            return ResponseEntity.ok(new Result(false));
+        }
     }
-
 
     @GetMapping("/check")
     public ResponseEntity<LoginResponse> check(Principal principal) {
@@ -78,9 +69,10 @@ public class ApiAuthController {
     public ResponseEntity register(@RequestBody RegisterRequest request) {
 
         if (settingsService.getGlobalSettings().isMultiuserMode() == true) {
+
             return new ResponseEntity(userService.register(request), HttpStatus.OK);
-        }
-        else return new ResponseEntity(HttpStatus.OK);
+
+        } else return new ResponseEntity(HttpStatus.OK);
     }
 
 

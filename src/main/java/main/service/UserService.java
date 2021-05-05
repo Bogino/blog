@@ -6,6 +6,7 @@ import lombok.Data;
 import main.api.mail.MyConstants;
 import main.api.request.ChangePasswordRequest;
 import main.api.request.EmailRestoreRequest;
+import main.api.request.LoginRequest;
 import main.api.request.RegisterRequest;
 import main.api.response.*;
 import main.model.CaptchaCodes;
@@ -19,6 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -41,29 +45,32 @@ import java.util.regex.Pattern;
 @Data
 public class UserService {
 
-    @Autowired
     private final UserRepository userRepository;
 
-    @Autowired
+
     private final CaptchaRepository captchaRepository;
 
-    @Autowired
+
     private final PostRepository postRepository;
 
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
+
     public JavaMailSender emailSender;
+
+    private final AuthenticationManager authenticationManager;
 
     @Value("${blog.upload.folder}")
     private String path;
 
+    @Autowired
     public UserService(UserRepository userRepository, CaptchaRepository captchaRepository,
-                       PostRepository postRepository, PasswordEncoder passwordEncoder) {
+                       PostRepository postRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.captchaRepository = captchaRepository;
         this.postRepository = postRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
     }
 
     @Transactional
@@ -178,6 +185,23 @@ public class UserService {
         userRepository.save(user);
 
         return result;
+
+    }
+
+    @Transactional
+    public LoginResponse login(LoginRequest loginRequest) throws UsernameNotFoundException{
+
+        userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(()-> new UsernameNotFoundException("Неверный email или пароль"));
+
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) auth.getPrincipal();
+
+        return getLoginResponse(user.getUsername());
+
 
     }
 
