@@ -119,19 +119,7 @@ public class ApiGeneralController {
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity addComment(@RequestBody AddCommentRequest request) {
 
-        int commentId;
-
-        try {
-            commentId = postService.addComment(request);
-        } catch (NullPointerCommentTextException e) {
-
-            ErrorResponse response = new ErrorResponse(false, new HashMap<>());
-            response.getErrors().put("text", "Текст не задан");
-            return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
-        }
-
-
-        return ResponseEntity.ok(commentId);
+        return ResponseEntity.ok(postService.addComment(request));
     }
 
     @PostMapping("/moderation")

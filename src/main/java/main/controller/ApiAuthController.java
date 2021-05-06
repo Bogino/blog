@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -38,14 +37,9 @@ public class ApiAuthController {
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody LoginRequest loginRequest) {
 
-        try {
+        return ResponseEntity.ok(userService.login(loginRequest));
 
-            return ResponseEntity.ok(userService.login(loginRequest));
 
-        } catch (UsernameNotFoundException e){
-            e.getMessage();
-            return ResponseEntity.ok(new Result(false));
-        }
     }
 
     @GetMapping("/check")

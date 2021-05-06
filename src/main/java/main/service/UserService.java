@@ -80,6 +80,7 @@ public class UserService {
 
         UserLoginResponse userResponse = new UserLoginResponse();
         userResponse.setEmail(currentUser.getEmail());
+        userResponse.setPhoto(currentUser.getPhoto());
         userResponse.setName(currentUser.getName());
         userResponse.setModeration(currentUser.getIsModerator() == 1);
         if (currentUser.getIsModerator() == 1) {

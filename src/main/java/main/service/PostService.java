@@ -134,7 +134,7 @@ public class PostService {
     @Transactional
     public ApiPostResponseById getPostsById(int id) throws PostNotFoundException {
 
-        Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(() -> new PostNotFoundException());
+        Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(() -> new PostNotFoundException("Походу нет такого поста :("));
 
 
         int likes = 0;

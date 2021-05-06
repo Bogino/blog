@@ -3,6 +3,7 @@ package main.controller;
 import main.api.request.AddPostRequest;
 import main.api.request.EditPostRequest;
 import main.api.request.VoteRequest;
+import main.api.response.ApiPostResponse;
 import main.api.response.ApiPostResponseById;
 import main.api.response.ErrorResponse;
 import main.api.response.Result;
@@ -92,13 +93,7 @@ public class ApiPostController {
     @GetMapping("/{id}")
     public ResponseEntity getPost(@PathVariable int id) {
 
-        ApiPostResponseById postResponse;
-        try {
-            postResponse = postService.getPostsById(id);
-        } catch (PostNotFoundException e) {
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
-        }
-        return ResponseEntity.ok(postResponse);
+        return ResponseEntity.ok(postService.getPostsById(id));
     }
 
 
