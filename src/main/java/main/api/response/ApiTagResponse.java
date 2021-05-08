@@ -4,12 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 @Data
 public class ApiTagResponse {
 
 
-    private ArrayList<TagResponse> tags = new ArrayList<>();
+    private Set<TagResponse> tags = new HashSet<>();
 
     public void addTag(String tagName, double tagWeight) {
 

@@ -2,6 +2,7 @@ package main.service;
 
 
 import main.api.response.ApiTagResponse;
+import main.model.Post;
 import main.model.Tag;
 import main.model.repository.PostRepository;
 import main.model.repository.TagRepository;
@@ -9,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TagService {
@@ -27,10 +30,11 @@ public class TagService {
 
     public ApiTagResponse getTags() {
 
-        List<Tag> tags = tagRepository.findAll();
-        if (tags.isEmpty())
+        Set<Tag> tags = tagRepository.findAll().stream().collect(Collectors.toSet());
 
+        if (tags.isEmpty()) {
             return new ApiTagResponse();
+        }
 
         double totalPosts = postRepository.getAllAcceptedPosts().size();
         Tag tagWithMaxPosts = tagRepository.getTagWithMaxPostsCount().orElseThrow();
@@ -41,10 +45,13 @@ public class TagService {
         ApiTagResponse apiTagResponse = new ApiTagResponse();
 
         for (Tag tag : tags) {
-
-            apiTagResponse.addTag(tag.getName(), postRepository.getCountPostsByTagName(tag.getName()) / totalPosts * factor);
-
+            for (Post post : tag.getPosts()){
+                if (post.getStatus().name().equals("ACCEPTED")){
+                    apiTagResponse.addTag(tag.getName(), postRepository.getCountPostsByTagName(tag.getName()) / totalPosts * factor);
+                }
+            }
         }
+
         return apiTagResponse;
 
     }

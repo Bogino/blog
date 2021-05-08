@@ -3,11 +3,9 @@ package main.controller;
 import main.api.request.AddCommentRequest;
 import main.api.request.PostModerationRequest;
 import main.api.request.ProfileRequest;
-import main.api.response.ErrorResponse;
 import main.api.response.InitResponse;
 import main.api.response.Result;
 import main.api.response.SettingsResponse;
-import main.exception.NullPointerCommentTextException;
 import main.service.PostService;
 import main.service.SettingsService;
 import main.service.TagService;
@@ -21,8 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
-
-import java.util.HashMap;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
@@ -149,17 +145,4 @@ public class ApiGeneralController {
     ) {
         return ResponseEntity.ok(userService.getPostProfileMy(photo, email, name, password, removePhoto));
     }
-
-
-//    @PutMapping("/settings")
-//    @PreAuthorize("hasAuthority('user:moderate')")
-//    public ResponseEntity saveSettings(@RequestBody SettingsRequest request){
-//
-//        GlobalSettings globalSettings = new GlobalSettings();
-//
-//
-//
-//    }
-
-
 }
