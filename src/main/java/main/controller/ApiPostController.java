@@ -112,7 +112,6 @@ public class ApiPostController {
             @PathVariable int id,
             @RequestBody EditPostRequest request) {
 
-
         return ResponseEntity.ok(postService.editPost(id, request.getTimestamp(), request.getActive(),
                 request.getTitle(), request.getTags(), request.getText()));
 

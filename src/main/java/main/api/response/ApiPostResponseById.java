@@ -14,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ApiPostResponseById {
 
+    private int id;
     private long timestamp;
     private boolean active;
     private UserIdNameResponse user;
@@ -25,9 +26,10 @@ public class ApiPostResponseById {
     private List<Comment> comments = new ArrayList<>();
     private List<String> tags;
 
-    public ApiPostResponseById(long timestamp, boolean isActive, int userId, String userName, String title, String text,
+    public ApiPostResponseById(int id, long timestamp, boolean isActive, int userId, String userName, String title, String text,
                                 int likeCount, int dislikeCount, int viewCount, List<String> tags){
 
+        this.id = id;
         this.timestamp = timestamp;
         active = isActive;
         user = new UserIdNameResponse(userId,userName);

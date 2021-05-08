@@ -28,6 +28,12 @@ public class Post {
     @JoinColumn(name = "user_id", nullable = false)
     private User userId;
 
+    @OneToMany(mappedBy = "postId")
+    private Set<PostVote> votes;
+
+    @OneToMany(mappedBy = "postId")
+    private Set<PostComment> comments;
+
     private Date time;
 
     private String title;
@@ -127,5 +133,21 @@ public class Post {
 
     public void setTags(Set<Tag> tags) {
         this.tags = tags;
+    }
+
+    public Set<PostVote> getVotes() {
+        return votes;
+    }
+
+    public void setVotes(Set<PostVote> votes) {
+        this.votes = votes;
+    }
+
+    public Set<PostComment> getComments() {
+        return comments;
+    }
+
+    public void setComments(Set<PostComment> comments) {
+        this.comments = comments;
     }
 }

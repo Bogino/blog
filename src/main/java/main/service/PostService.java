@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
@@ -42,7 +43,6 @@ public class PostService {
 
     private final SettingsService settingsService;
 
-    private long count = 0;
 
     public PostService(PostRepository postRepository, UserRepository userRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, SettingsService settingsService) {
         this.postRepository = postRepository;
@@ -62,9 +62,6 @@ public class PostService {
         Page<Post> posts = null;
 
         switch (mode) {
-            case ("recent"):
-                posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").descending()))).orElseThrow();
-                break;
             case ("early"):
                 posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").ascending()))).orElseThrow();
                 break;
@@ -72,34 +69,35 @@ public class PostService {
             case ("popular"):
                 posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit))).orElseThrow();
                 break;
+            default:
+                posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").descending()))).orElseThrow();
+                break;
         }
 
 
         ApiPostResponse apiPostResponse = new ApiPostResponse();
-        count = posts.getTotalElements();
+        long count = posts.getTotalElements();
 
         for (Post p : posts) {
             int likes = 0;
             int dislikes = 0;
-            List<PostVote> postVotes = postVoteRepository.findByPost(p);
-            int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
+            List<PostVote> postVotes = p.getVotes().stream().collect(Collectors.toList());
+            int commentsCount = p.getComments().size();
             for (PostVote pv : postVotes) {
                 if (pv.getValue() < 0) {
                     dislikes++;
                 } else likes++;
             }
-
             apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
         }
 
-        if (mode.equals("popular"))
-
+        if (mode.equals("popular")) {
             apiPostResponse.sortPostsByCommentCount();
+        }
 
-        if (mode.equals("best"))
-
+        if (mode.equals("best")) {
             apiPostResponse.sortPostsByLikes();
-
+        }
 
         return apiPostResponse;
 
@@ -113,7 +111,7 @@ public class PostService {
         Pageable pageWithTenElements = PageRequest.of(page, limit);
         Page<Post> posts = Optional.of(postRepository.findByTitleContaining(query, pageWithTenElements)).orElseThrow();
         ApiPostResponse apiPostResponse = new ApiPostResponse();
-        count = posts.getTotalElements();
+        long count = posts.getTotalElements();
         for (Post p : posts) {
             int likes = 0;
             int dislikes = 0;
@@ -148,7 +146,7 @@ public class PostService {
 
         List<String> tags = tagRepository.findByPostId(post.getId());
 
-        ApiPostResponseById apiPostResponseById = new ApiPostResponseById(post.getTime().getTime() / 1000, true, post.getUserId().getId(), post.getUserId().getName(),
+        ApiPostResponseById apiPostResponseById = new ApiPostResponseById(post.getId(), post.getTime().getTime() / 1000, true, post.getUserId().getId(), post.getUserId().getName(),
                 post.getTitle(), post.getText(), likes, dislikes, 1, tags);
         for (PostComment pc : postCommentRepository.getCommentsByPostId(post.getId())) {
             apiPostResponseById.addComment(pc.getId(), pc.getTime().getTime() / 1000, pc.getText(), pc.getUserId().getId(), pc.getUserId().getName(), pc.getUserId().getPhoto());
@@ -165,7 +163,7 @@ public class PostService {
         Pageable pageWithTenElements = PageRequest.of(page, limit);
         Page<Post> posts = Optional.of(postRepository.findByDate(date, pageWithTenElements)).orElseThrow();
         ApiPostResponse apiPostResponse = new ApiPostResponse();
-        count = posts.getTotalElements();
+        long count = posts.getTotalElements();
         for (Post p : posts) {
             int likes = 0;
             int dislikes = 0;
@@ -192,7 +190,7 @@ public class PostService {
         Pageable pageWithTenElements = PageRequest.of(page, limit);
         Page<Post> posts = Optional.of(postRepository.findByTagName(name, pageWithTenElements)).orElseThrow();
         ApiPostResponse apiPostResponse = new ApiPostResponse();
-        count = posts.getTotalElements();
+        long count = posts.getTotalElements();
         for (Post p : posts) {
             int likes = 0;
             int dislikes = 0;
@@ -219,7 +217,7 @@ public class PostService {
         Pageable pageWithTenElements = PageRequest.of(page, limit);
         Page<Post> posts = Optional.of(postRepository.getActivePosts(status, pageWithTenElements)).orElseThrow();
         ApiPostResponse apiPostResponse = new ApiPostResponse();
-        count = posts.getTotalElements();
+        long count = posts.getTotalElements();
 
         for (Post p : posts) {
             int likes = 0;
@@ -262,7 +260,7 @@ public class PostService {
         }
 
         ApiPostResponse apiPostResponse = new ApiPostResponse();
-        count = posts.getTotalElements();
+        long count = posts.getTotalElements();
         for (Post p : posts) {
             if (p.getUserId().getEmail().equals(principal.getUsername())) {
                 int likes = 0;
@@ -355,7 +353,7 @@ public class PostService {
             return response;
         }
 
-        Post post = postRepository.findByIdAcceptedPost(id).orElseThrow();
+        Post post = postRepository.findById(id).orElseThrow();
         Date date = null;
         Result result = new Result(true);
 
@@ -363,19 +361,29 @@ public class PostService {
             date = new Date(timestamp);
         }
 
-        if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
+        if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp || timestamp == 0) {
             date = new Date();
         }
 
-        post.setIsActive(active);
-
-        if (text != null)
-            post.setText(text);
         post.setTime(date);
 
-        if (title != null)
+        post.setIsActive(active);
+
+        if (text != null) {
+            post.setText(text);
+        }
+
+        if (title != null) {
             post.setTitle(title);
-        post.setStatus(ModerationStatus.valueOf("NEW"));
+        }
+
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        if (user.getIsModerator() == 0) {
+            post.setStatus(ModerationStatus.valueOf("NEW"));
+        }
 
         if (tags.size() != 0) {
             for (String tagName : tags) {
@@ -393,11 +401,9 @@ public class PostService {
             }
         }
 
-
         postRepository.save(post);
 
         return result;
-
 
     }
 
@@ -511,7 +517,6 @@ public class PostService {
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
 
-
         comment.setTime(new Date());
         comment.setUserId(user);
         comment.setText(request.getText());
@@ -612,8 +617,7 @@ public class PostService {
 
         if (title == null) {
             errors.put("title", "Заголовок отсутствует");
-        }
-        if (title.length() < 3) {
+        } else if (title.length() < 3) {
             errors.put("title", "Заголовок слишком короткий");
         }
         if (text.length() < 50) {
