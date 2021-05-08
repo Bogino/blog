@@ -18,6 +18,7 @@ import main.model.repository.UserRepository;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -341,7 +342,7 @@ public class UserService {
 
         BufferedImage scaledImage = Scalr.resize(image, 36, 36);
 
-        user.setPhoto("\\" + uploadAvatar(scaledImage, photo.getOriginalFilename()));
+        user.setPhoto(uploadAvatar(scaledImage, photo.getOriginalFilename()));
 
         if (email != null) {
             user.setEmail(email);
@@ -388,13 +389,13 @@ public class UserService {
                 }
             }
 
+            path = "/" + this.path + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6) + "/" + fileName;
+
             File currDir = new File(this.path + sb.substring(0, 2) + "/" + sb.substring(2, 4) + "/" + sb.substring(4, 6) + "/" + fileName);
 
             currDir.mkdirs();
 
             ImageIO.write(image, "jpg", currDir);
-
-            path = currDir.getPath();
 
 
         } catch (IOException e) {

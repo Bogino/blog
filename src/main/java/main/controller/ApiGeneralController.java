@@ -142,10 +142,10 @@ public class ApiGeneralController {
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<Result> updateProfileWithPhoto(
             @RequestParam() MultipartFile photo,
-            @RequestParam(value = "removePhoto", required = false) int removePhoto,
-            @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "email", required = false) String email,
-            @RequestParam(name = "password", required = false) String password
+            @RequestParam(required = false) int removePhoto,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String password
     ) {
         return ResponseEntity.ok(userService.getPostProfileMy(photo, email, name, password, removePhoto));
     }
