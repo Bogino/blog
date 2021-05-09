@@ -1,6 +1,7 @@
 package main.model.repository;
 
 import main.model.CaptchaCodes;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,7 +15,6 @@ public interface CaptchaRepository extends JpaRepository<CaptchaCodes, Integer> 
 
     @Modifying
     @Transactional
-    //@Query(value = "DELETE FROM captcha_codes WHERE time < NOW() - HOUR(1)", nativeQuery = true)
     @Query(value = "DELETE FROM captcha_codes WHERE HOUR(TIMEDIFF(NOW(), time)) > 1", nativeQuery = true)
     void deleteOldCaptchas();
 

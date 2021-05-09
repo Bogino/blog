@@ -138,7 +138,7 @@ public class UserService {
         captcha.setTime(new Date());
         captchaRepository.save(captcha);
 
-        //TODO: captchaRepository.deleteOldCaptchas();
+        captchaRepository.deleteOldCaptchas();
 
         CaptchaImageResponse imageResponse = new CaptchaImageResponse(secret, image);
 
