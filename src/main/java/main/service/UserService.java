@@ -18,7 +18,6 @@ import main.model.repository.UserRepository;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -57,7 +56,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
 
-    public JavaMailSender emailSender;
+    public final JavaMailSender emailSender;
 
     private final AuthenticationManager authenticationManager;
 
@@ -66,11 +65,12 @@ public class UserService {
 
     @Autowired
     public UserService(UserRepository userRepository, CaptchaRepository captchaRepository,
-                       PostRepository postRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
+                       PostRepository postRepository, PasswordEncoder passwordEncoder, JavaMailSender emailSender, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.captchaRepository = captchaRepository;
         this.postRepository = postRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailSender = emailSender;
         this.authenticationManager = authenticationManager;
     }
 
@@ -103,8 +103,9 @@ public class UserService {
 
         Cage cage = new GCage();
         String code = cage.getTokenGenerator().next();
+        String shortCode = code.substring(0,code.length()/2);
         String prefix = "data:image/png;base64, ";
-        byte[] fileContent = cage.draw(code);
+        byte[] fileContent = cage.draw(shortCode);
         String encodedString = Base64.getEncoder().encodeToString(fileContent);
         String image = prefix + encodedString;
 
@@ -132,7 +133,7 @@ public class UserService {
         String secret = sb.toString();
 
         CaptchaCodes captcha = new CaptchaCodes();
-        captcha.setCode(code);
+        captcha.setCode(shortCode);
         captcha.setSecretCode(secret);
         captcha.setTime(new Date());
         captchaRepository.save(captcha);
@@ -216,7 +217,8 @@ public class UserService {
 
         message.setFrom(MyConstants.MY_EMAIL);
 
-        message.setTo(userRepository.findByEmail(request.getEmail()).orElseThrow().getEmail());
+        message.setTo(userRepository.findByEmail(request.getEmail()).orElseThrow(()->new UsernameNotFoundException("Пользователь не найден")).getEmail());
+
         message.setSubject("Restoring password");
 
         byte[] array = new byte[256];
@@ -241,8 +243,11 @@ public class UserService {
         }
 
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+
         user.setCode(sb.toString());
+
         userRepository.save(user);
+
         message.setText("/login/change-password/" + sb.toString());
 
 
