@@ -47,14 +47,11 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-
     private final CaptchaRepository captchaRepository;
-
 
     private final PostRepository postRepository;
 
     private final PasswordEncoder passwordEncoder;
-
 
     public final JavaMailSender emailSender;
 
@@ -67,10 +64,15 @@ public class UserService {
     public UserService(UserRepository userRepository, CaptchaRepository captchaRepository,
                        PostRepository postRepository, PasswordEncoder passwordEncoder, JavaMailSender emailSender, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
+
         this.captchaRepository = captchaRepository;
+
         this.postRepository = postRepository;
+
         this.passwordEncoder = passwordEncoder;
+
         this.emailSender = emailSender;
+
         this.authenticationManager = authenticationManager;
     }
 
@@ -80,19 +82,28 @@ public class UserService {
                 .orElseThrow(() -> new UsernameNotFoundException(email));
 
         UserLoginResponse userResponse = new UserLoginResponse();
+
         userResponse.setEmail(currentUser.getEmail());
+
         userResponse.setPhoto(currentUser.getPhoto());
+
         userResponse.setName(currentUser.getName());
+
         userResponse.setModeration(currentUser.getIsModerator() == 1);
+
         if (currentUser.getIsModerator() == 1) {
+
             List<Post> newPosts = postRepository.getNewPosts();
+
             userResponse.setModerationCount(newPosts.size());
         }
         userResponse.setId(currentUser.getId());
 
 
         LoginResponse loginResponse = new LoginResponse();
+
         loginResponse.setResult(true);
+
         loginResponse.setUserLoginResponse(userResponse);
 
         return loginResponse;
@@ -102,11 +113,17 @@ public class UserService {
     public CaptchaImageResponse getCaptcha() {
 
         Cage cage = new GCage();
+
         String code = cage.getTokenGenerator().next();
+
         String shortCode = code.substring(0,code.length()/2);
+
         String prefix = "data:image/png;base64, ";
+
         byte[] fileContent = cage.draw(shortCode);
+
         String encodedString = Base64.getEncoder().encodeToString(fileContent);
+
         String image = prefix + encodedString;
 
         byte[] array = new byte[256];
@@ -133,17 +150,20 @@ public class UserService {
         String secret = sb.toString();
 
         CaptchaCodes captcha = new CaptchaCodes();
+
         captcha.setCode(shortCode);
+
         captcha.setSecretCode(secret);
+
         captcha.setTime(new Date());
+
         captchaRepository.save(captcha);
 
-        //TODO: captchaRepository.deleteOldCaptchas();
+        captchaRepository.deleteOldCaptchas();
 
         CaptchaImageResponse imageResponse = new CaptchaImageResponse(secret, image);
 
         return imageResponse;
-
 
     }
 
@@ -151,40 +171,64 @@ public class UserService {
     public Result register(RegisterRequest request) {
 
         Pattern eMailPattern = Pattern.compile("[a-z0-9]+@[a-z]+\\.[a-z]+");
+
         Pattern passwordPattern = Pattern.compile(".{6,}");
+
         Pattern namePattern = Pattern.compile("[a-zA-Zа-яА-Я\\-\\s]+");
+
         ErrorResponse errorResponse = new ErrorResponse(false, new HashMap<>());
+
         Result result = new Result(true);
 
         if (!eMailPattern.matcher(request.getEmail()).matches()) {
+
             errorResponse.getErrors().put("email", "Некорректное имя e-mail");
+
         }
+
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+
             errorResponse.getErrors().put("email", "Этот e-mail уже зарегистрирован");
+
         }
+
         if (!passwordPattern.matcher(request.getPassword()).matches()) {
+
             errorResponse.getErrors().put("password", "Пароль короче 6-ти символов");
+
         }
+
         if (!namePattern.matcher(request.getName()).matches()) {
+
             errorResponse.getErrors().put("name", "Имя содержит недопустимые символы");
+
         }
 
 
         CaptchaCodes captchaCode = captchaRepository.findBySecretCode(request.getCaptchaSecret()).orElseThrow();
 
         if (!captchaCode.getCode().equals(request.getCaptcha())) {
+
             errorResponse.getErrors().put("captcha", "Код с картинки введён неверно");
+
         }
 
         if (errorResponse.getErrors().size() > 0) {
+
             return errorResponse;
+
         }
 
         User user = new User();
+
         user.setEmail(request.getEmail());
+
         user.setName(request.getName());
+
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+
         user.setRegTime(new Date());
+
         userRepository.save(user);
 
         return result;
@@ -273,16 +317,22 @@ public class UserService {
         }
 
         if (!captcha.getCode().equals(request.getCode())) {
+
             response.getErrors().put("captcha", "Пароль с картинки введен неверно");
+
         }
 
 
         if (request.getPassword().length() < 6) {
+
             response.getErrors().put("password", "Пароль короче 6 символов");
+
         }
 
         if (response.getErrors().size() != 0) {
+
             return response;
+
         }
 
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -301,20 +351,33 @@ public class UserService {
                                 int removePhoto) {
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
         if (email != null) {
+
             user.setEmail(email);
+
         }
+
         if (name != null) {
+
             user.setName(name);
+
         }
+
         if (password != null) {
+
             user.setPassword(passwordEncoder.encode(password));
+
         }
+
         if (removePhoto == 1) {
+
             user.setPhoto(null);
+
         }
+
         userRepository.save(user);
 
         return new Result(true);
@@ -330,15 +393,23 @@ public class UserService {
                                    int removePhoto) {
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
         BufferedImage image;
+
         try {
+
             image = ImageIO.read(photo.getInputStream());
+
         } catch (IOException e) {
+
             ErrorResponse imageUploadErrorResponse = new ErrorResponse(false, new HashMap<>());
+
             imageUploadErrorResponse.getErrors().put("image", "Неверный формат файла");
+
             return imageUploadErrorResponse;
+
         }
 
         image = cropImage(image);
@@ -348,20 +419,33 @@ public class UserService {
         user.setPhoto(uploadAvatar(scaledImage, photo.getOriginalFilename()));
 
         if (email != null) {
+
             user.setEmail(email);
+
         }
+
         if (name != null) {
+
             user.setName(name);
+
         }
+
         if (password != null) {
+
             user.setPassword(passwordEncoder.encode(password));
+
         }
+
         if (removePhoto != 0) {
+
             user.setPhoto(null);
+
         }
+
         userRepository.save(user);
 
         return new Result(true);
+
     }
 
     private String uploadAvatar(BufferedImage image, String fileName) {
@@ -402,7 +486,9 @@ public class UserService {
 
 
         } catch (IOException e) {
+
             e.printStackTrace();
+
         }
 
         return path;
