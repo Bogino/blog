@@ -192,9 +192,7 @@ public class UserService {
     }
 
     @Transactional
-    public LoginResponse login(LoginRequest loginRequest) throws UsernameNotFoundException{
-
-        userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(()-> new UsernameNotFoundException("Неверный email или пароль"));
+    public LoginResponse login(LoginRequest loginRequest) {
 
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
@@ -287,7 +285,7 @@ public class UserService {
             return response;
         }
 
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         userRepository.save(user);
 
@@ -312,7 +310,7 @@ public class UserService {
             user.setName(name);
         }
         if (password != null) {
-            user.setPassword(password);
+            user.setPassword(passwordEncoder.encode(password));
         }
         if (removePhoto == 1) {
             user.setPhoto(null);
@@ -356,7 +354,7 @@ public class UserService {
             user.setName(name);
         }
         if (password != null) {
-            user.setPassword(password);
+            user.setPassword(passwordEncoder.encode(password));
         }
         if (removePhoto != 0) {
             user.setPhoto(null);

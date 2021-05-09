@@ -5,6 +5,7 @@ import main.api.response.ErrorResponse;
 import main.api.response.Result;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -54,6 +55,14 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(PostNotFoundException.class)
     public final void handlePostNotFoundException(PostNotFoundException e) {
         e.getMessage();
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public final ResponseEntity<Result> handleAuthenticationException(){
+
+        System.out.println("Логин или пароль введены неверно");
+
+        return ResponseEntity.ok(new Result(false));
     }
 
 }
