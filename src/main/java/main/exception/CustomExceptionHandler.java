@@ -25,6 +25,12 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
         return imageUploadErrorResponse;
     }
 
+    @ExceptionHandler(CommentNotFoundException.class)
+    public final void handleCommentNotFoundException(CommentNotFoundException e){
+
+        e.getMessage();
+
+    }
 
     @ExceptionHandler(NullPointerCommentTextException.class)
     public final ResponseEntity<ErrorResponse> handleNullPointerCommentTextException(){

@@ -3,6 +3,7 @@ package main.service;
 import main.api.request.AddCommentRequest;
 import main.api.request.PostModerationRequest;
 import main.api.response.*;
+import main.exception.CommentNotFoundException;
 import main.exception.NullPointerCommentTextException;
 import main.exception.PostNotFoundException;
 import main.model.*;
@@ -179,6 +180,20 @@ public class PostService {
 
         Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(() -> new PostNotFoundException("Походу нет такого поста :("));
 
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        if (user.getIsModerator() != 1 && !post.getUserId().equals(user)){
+
+            int count = post.getViewCount();
+
+            post.setViewCount(++count);
+
+            postRepository.save(post);
+
+        }
+
         int likes = 0;
 
         int dislikes = 0;
@@ -197,7 +212,7 @@ public class PostService {
         List<String> tags = tagRepository.findByPostId(post.getId());
 
         ApiPostResponseById apiPostResponseById = new ApiPostResponseById(post.getId(), post.getTime().getTime() / 1000, true, post.getUserId().getId(), post.getUserId().getName(),
-                post.getTitle(), post.getText(), likes, dislikes, 1, tags);
+                post.getTitle(), post.getText(), likes, dislikes, post.getViewCount(), tags);
 
         for (PostComment pc : postCommentRepository.getCommentsByPostId(post.getId())) {
 
@@ -674,7 +689,9 @@ public class PostService {
 
         if (request.getParentId() != 0) {
 
-            comment = postCommentRepository.findById(request.getParentId()).orElseThrow();
+            postCommentRepository.findById(request.getParentId()).orElseThrow(()->new CommentNotFoundException("Комментария больше нет"));
+
+            comment.setParentId(request.getParentId());
 
         }
 
@@ -686,7 +703,7 @@ public class PostService {
 
         comment.setUserId(user);
 
-        comment.setText(request.getText());
+        comment.setText(cleanTextFromTags(request.getText()));
 
         comment.setPostId(postRepository.findByIdAcceptedPost(request.getPostId()).orElseThrow());
 
