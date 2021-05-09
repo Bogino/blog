@@ -7,6 +7,8 @@ import main.exception.NullPointerCommentTextException;
 import main.exception.PostNotFoundException;
 import main.model.*;
 import main.model.repository.*;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -37,7 +39,6 @@ public class PostService {
     @Autowired
     private final PostCommentRepository postCommentRepository;
 
-
     @Autowired
     private final TagRepository tagRepository;
 
@@ -45,12 +46,17 @@ public class PostService {
 
 
     public PostService(PostRepository postRepository, UserRepository userRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, SettingsService settingsService) {
+
         this.postRepository = postRepository;
+
         this.userRepository = userRepository;
+
         this.postVoteRepository = postVoteRepository;
+
         this.postCommentRepository = postCommentRepository;
 
         this.tagRepository = tagRepository;
+
         this.settingsService = settingsService;
     }
 
@@ -59,44 +65,70 @@ public class PostService {
     public ApiPostResponse getPosts(String mode, int offset, int limit) {
 
         int page = offset / limit;
+
         Page<Post> posts = null;
 
         switch (mode) {
+
             case ("early"):
+
                 posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").ascending()))).orElseThrow();
+
                 break;
+
             case ("best"):
+
             case ("popular"):
+
                 posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit))).orElseThrow();
+
                 break;
+
             default:
+
                 posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").descending()))).orElseThrow();
+
                 break;
         }
 
 
         ApiPostResponse apiPostResponse = new ApiPostResponse();
+
         long count = posts.getTotalElements();
 
         for (Post p : posts) {
+
             int likes = 0;
+
             int dislikes = 0;
+
             List<PostVote> postVotes = p.getVotes().stream().collect(Collectors.toList());
+
             int commentsCount = p.getComments().size();
+
             for (PostVote pv : postVotes) {
+
                 if (pv.getValue() < 0) {
+
                     dislikes++;
+
                 } else likes++;
             }
+
             apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+
         }
 
         if (mode.equals("popular")) {
+
             apiPostResponse.sortPostsByCommentCount();
+
         }
 
         if (mode.equals("best")) {
+
             apiPostResponse.sortPostsByLikes();
+
         }
 
         return apiPostResponse;
@@ -109,22 +141,35 @@ public class PostService {
         int page = offset / limit;
 
         Pageable pageWithTenElements = PageRequest.of(page, limit);
+
         Page<Post> posts = Optional.of(postRepository.findByTitleContaining(query, pageWithTenElements)).orElseThrow();
+
         ApiPostResponse apiPostResponse = new ApiPostResponse();
+
         long count = posts.getTotalElements();
+
         for (Post p : posts) {
+
             int likes = 0;
+
             int dislikes = 0;
+
             List<PostVote> postVotes = postVoteRepository.findByPost(p);
+
             int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
+
             for (PostVote pv : postVotes) {
+
                 if (pv.getValue() < 0) {
+
                     dislikes++;
+
                 } else likes++;
             }
-            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
-        }
 
+            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
+
+        }
 
         return apiPostResponse;
     }
@@ -134,13 +179,18 @@ public class PostService {
 
         Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(() -> new PostNotFoundException("Походу нет такого поста :("));
 
-
         int likes = 0;
+
         int dislikes = 0;
+
         List<PostVote> postVotes = postVoteRepository.findByPost(post);
+
         for (PostVote pv : postVotes) {
+
             if (pv.getValue() < 0) {
+
                 dislikes++;
+
             } else likes++;
         }
 
@@ -148,8 +198,11 @@ public class PostService {
 
         ApiPostResponseById apiPostResponseById = new ApiPostResponseById(post.getId(), post.getTime().getTime() / 1000, true, post.getUserId().getId(), post.getUserId().getName(),
                 post.getTitle(), post.getText(), likes, dislikes, 1, tags);
+
         for (PostComment pc : postCommentRepository.getCommentsByPostId(post.getId())) {
+
             apiPostResponseById.addComment(pc.getId(), pc.getTime().getTime() / 1000, pc.getText(), pc.getUserId().getId(), pc.getUserId().getName(), pc.getUserId().getPhoto());
+
         }
 
         return apiPostResponseById;
@@ -161,19 +214,32 @@ public class PostService {
         int page = offset / limit;
 
         Pageable pageWithTenElements = PageRequest.of(page, limit);
+
         Page<Post> posts = Optional.of(postRepository.findByDate(date, pageWithTenElements)).orElseThrow();
+
         ApiPostResponse apiPostResponse = new ApiPostResponse();
+
         long count = posts.getTotalElements();
+
         for (Post p : posts) {
+
             int likes = 0;
+
             int dislikes = 0;
+
             List<PostVote> postVotes = postVoteRepository.findByPost(p);
+
             int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
+
             for (PostVote pv : postVotes) {
+
                 if (pv.getValue() < 0) {
+
                     dislikes++;
+
                 } else likes++;
             }
+
             apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
         }
 
@@ -188,19 +254,32 @@ public class PostService {
         int page = offset / limit;
 
         Pageable pageWithTenElements = PageRequest.of(page, limit);
+
         Page<Post> posts = Optional.of(postRepository.findByTagName(name, pageWithTenElements)).orElseThrow();
+
         ApiPostResponse apiPostResponse = new ApiPostResponse();
+
         long count = posts.getTotalElements();
+
         for (Post p : posts) {
+
             int likes = 0;
+
             int dislikes = 0;
+
             List<PostVote> postVotes = postVoteRepository.findByPost(p);
+
             int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
+
             for (PostVote pv : postVotes) {
+
                 if (pv.getValue() < 0) {
+
                     dislikes++;
+
                 } else likes++;
             }
+
             apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
         }
 
@@ -215,20 +294,32 @@ public class PostService {
         int page = offset / limit;
 
         Pageable pageWithTenElements = PageRequest.of(page, limit);
+
         Page<Post> posts = Optional.of(postRepository.getActivePosts(status, pageWithTenElements)).orElseThrow();
+
         ApiPostResponse apiPostResponse = new ApiPostResponse();
+
         long count = posts.getTotalElements();
 
         for (Post p : posts) {
+
             int likes = 0;
+
             int dislikes = 0;
+
             List<PostVote> postVotes = postVoteRepository.findByPost(p);
+
             int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
+
             for (PostVote pv : postVotes) {
+
                 if (pv.getValue() < 0) {
+
                     dislikes++;
+
                 } else likes++;
             }
+
             apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
         }
 
@@ -242,34 +333,58 @@ public class PostService {
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         int page = offset / limit;
+
         Page<Post> posts = null;
 
         switch (status) {
+
             case ("inactive"):
+
                 posts = Optional.of(postRepository.getInActivePosts(PageRequest.of(page, limit))).orElseThrow();
+
                 break;
+
             case ("pending"):
+
                 posts = Optional.of(postRepository.getActivePosts("NEW", PageRequest.of(page, limit))).orElseThrow();
+
                 break;
+
             case ("declined"):
+
                 posts = Optional.of(postRepository.getActivePosts("DECLINED", PageRequest.of(page, limit))).orElseThrow();
+
                 break;
+
             case ("published"):
+
                 posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit))).orElseThrow();
+
                 break;
         }
 
         ApiPostResponse apiPostResponse = new ApiPostResponse();
+
         long count = posts.getTotalElements();
+
         for (Post p : posts) {
+
             if (p.getUserId().getEmail().equals(principal.getUsername())) {
+
                 int likes = 0;
+
                 int dislikes = 0;
+
                 List<PostVote> postVotes = postVoteRepository.findByPost(p);
+
                 int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
+
                 for (PostVote pv : postVotes) {
+
                     if (pv.getValue() < 0) {
+
                         dislikes++;
+
                     } else likes++;
                 }
 
@@ -284,36 +399,52 @@ public class PostService {
     @Transactional
     public Result addPost(long timestamp, int active, String title, List<String> tags, String text) {
 
+        text = cleanTextFromTags(text);
+
         Map<String, String> errors = checkErrors(title, text);
 
         if (!errors.isEmpty()) {
+
             return new ErrorResponse(false, errors);
+
         }
 
         Post post = new Post();
 
         Date date = null;
+
         Result result = new Result(true);
 
         if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
+
             date = new Date(timestamp);
+
         }
         if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
+
             date = new Date();
+
         }
 
         if (settingsService.getGlobalSettings().isPostPremoderation()) {
+
             post.setStatus(ModerationStatus.valueOf("NEW"));
+
         } else if (post.getIsActive() == 1) {
+
             post.setStatus(ModerationStatus.ACCEPTED);
+
         }
 
         post.setTime(date);
-        post.setIsActive(active);
-        post.setTitle(title);
-        post.setText(text);
-        post.setViewCount(0);
 
+        post.setIsActive(active);
+
+        post.setTitle(title);
+
+        post.setText(text);
+
+        post.setViewCount(0);
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
@@ -323,22 +454,30 @@ public class PostService {
 
 
         if (tags.size() != 0) {
+
             for (String tagName : tags) {
 
                 Tag tag = tagRepository.findByName(tagName);
+
                 if (tag != null) {
+
                     post.getTags().add(tag);
+
                 } else {
+
                     Tag newTag = new Tag();
+
                     newTag.setName(tagName);
+
                     tagRepository.save(newTag);
+
                     post.getTags().add(newTag);
 
                 }
             }
         }
-        postRepository.save(post);
 
+        postRepository.save(post);
 
         return result;
     }
@@ -347,14 +486,20 @@ public class PostService {
     @Transactional
     public Result editPost(int id, long timestamp, int active, String title, List<String> tags, String text) {
 
-        ErrorResponse response = new ErrorResponse(false, checkErrors(title, text));
+        text = cleanTextFromTags(text);
 
-        if (!response.getErrors().isEmpty()) {
-            return response;
+        Map<String, String> errors = checkErrors(title, text);
+
+        if (!errors.isEmpty()) {
+
+            return new ErrorResponse(false, errors);
+
         }
 
         Post post = postRepository.findById(id).orElseThrow();
+
         Date date = null;
+
         Result result = new Result(true);
 
         if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
@@ -369,32 +514,36 @@ public class PostService {
 
         post.setIsActive(active);
 
-        if (text != null) {
-            post.setText(text);
-        }
-
-        if (title != null) {
-            post.setTitle(title);
-        }
+        post.setText(text);
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
         if (user.getIsModerator() == 0) {
+
             post.setStatus(ModerationStatus.valueOf("NEW"));
+
         }
 
         if (tags.size() != 0) {
+
             for (String tagName : tags) {
 
                 Tag tag = tagRepository.findByName(tagName);
+
                 if (tag != null) {
+
                     post.getTags().add(tag);
+
                 } else {
+
                     Tag newTag = new Tag();
+
                     newTag.setName(tagName);
+
                     tagRepository.save(newTag);
+
                     post.getTags().add(newTag);
 
                 }
@@ -410,14 +559,19 @@ public class PostService {
     public ApiCalendarResponse getCountPostsByYear(String year) {
 
         ApiCalendarResponse apiCalendarResponse = new ApiCalendarResponse();
+
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
         for (Integer y : postRepository.getYearsOfPosts()) {
+
             apiCalendarResponse.getYears().add(y);
+
         }
 
         for (Date date : postRepository.getDatesByYear(year)) {
+
             apiCalendarResponse.getPosts().put(dateFormat.format(date), postRepository.getCountPostsByDate(date));
+
         }
 
 
@@ -428,14 +582,21 @@ public class PostService {
     public ApiCalendarResponse getCountPostsForCurrentYear() {
 
         ApiCalendarResponse apiCalendarResponse = new ApiCalendarResponse();
+
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
         Calendar calendar = Calendar.getInstance(TimeZone.getDefault(), Locale.getDefault());
+
         calendar.setTime(new Date());
+
         int currentYear = calendar.get(java.util.Calendar.YEAR);
+
         apiCalendarResponse.getYears().add(currentYear);
 
         for (Date date : postRepository.getDatesByYear(String.valueOf(currentYear))) {
+
             apiCalendarResponse.getPosts().put(dateFormat.format(date), postRepository.getCountPostsByDate(date));
+
         }
 
         return apiCalendarResponse;
@@ -449,7 +610,9 @@ public class PostService {
         ArrayList<Post> posts = postRepository.getAllAcceptedPosts();
 
         int likesCount = 0;
+
         int dislikesCount = 0;
+
         int viewsCount = 0;
 
         for (Post p : posts) {
@@ -459,9 +622,13 @@ public class PostService {
             List<PostVote> postVotes = postVoteRepository.findByPost(p);
 
             for (PostVote pv : postVotes) {
+
                 if (pv.getValue() < 0) {
+
                     dislikesCount++;
+
                 } else likesCount++;
+
             }
         }
 
@@ -495,7 +662,7 @@ public class PostService {
     }
 
     @Transactional
-    public int addComment(AddCommentRequest request) throws NullPointerCommentTextException {
+    public ApiCommentResponse addComment(AddCommentRequest request) throws NullPointerCommentTextException {
 
         if (request.getText() == null) {
 
@@ -511,19 +678,23 @@ public class PostService {
 
         }
 
-
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
-
         comment.setTime(new Date());
+
         comment.setUserId(user);
+
         comment.setText(request.getText());
+
         comment.setPostId(postRepository.findByIdAcceptedPost(request.getPostId()).orElseThrow());
+
         postCommentRepository.save(comment);
 
-        return comment.getId();
+        ApiCommentResponse response = new ApiCommentResponse(comment.getId());
+
+        return response;
 
     }
 
@@ -531,7 +702,9 @@ public class PostService {
     public Result moderate(PostModerationRequest request) {
 
         Result result = new Result(true);
+
         Post post = postRepository.findByPostId(request.getPostId()).orElseThrow();
+
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
@@ -539,12 +712,18 @@ public class PostService {
         post.setModeratorId(user);
 
 
-        if (request.getDecision().equals("accept"))
-            post.setStatus(ModerationStatus.ACCEPTED);
-        else post.setStatus(ModerationStatus.DECLINED);
+        if (request.getDecision().equals("accept")) {
 
+            post.setStatus(ModerationStatus.ACCEPTED);
+
+        } else {
+
+            post.setStatus(ModerationStatus.DECLINED);
+
+        }
 
         postRepository.save(post);
+
         return result;
 
     }
@@ -561,18 +740,30 @@ public class PostService {
         PostVote postVote = postVoteRepository.findByUserIdAndPostId(post, user);
 
         if (postVote == null) {
+
             postVote = new PostVote();
+
             postVote.setUserId(user);
+
             postVote.setPostId(post);
+
             postVote.setValue(1);
+
             postVoteRepository.save(postVote);
+
             return new Result(true);
         }
 
-        if (postVote.getValue() > 0)
+        if (postVote.getValue() > 0) {
+
             return new Result(false);
-        if (postVote.getValue() < 0)
+
+        }
+        if (postVote.getValue() < 0) {
+
             postVote.setValue(1);
+
+        }
 
         postVoteRepository.save(postVote);
 
@@ -592,18 +783,31 @@ public class PostService {
         PostVote postVote = postVoteRepository.findByUserIdAndPostId(post, user);
 
         if (postVote == null) {
+
             postVote = new PostVote();
+
             postVote.setUserId(user);
+
             postVote.setPostId(post);
+
             postVote.setValue(-1);
+
             postVoteRepository.save(postVote);
+
             return new Result(true);
         }
 
-        if (postVote.getValue() < 0)
+        if (postVote.getValue() < 0) {
+
             return new Result(false);
-        if (postVote.getValue() > 0)
+
+        }
+
+        if (postVote.getValue() > 0) {
+
             postVote.setValue(-1);
+
+        }
 
         postVoteRepository.save(postVote);
 
@@ -616,15 +820,34 @@ public class PostService {
         Map<String, String> errors = new HashMap<>();
 
         if (title == null) {
+
             errors.put("title", "Заголовок отсутствует");
+
         } else if (title.length() < 3) {
+
             errors.put("title", "Заголовок слишком короткий");
+
         }
-        if (text.length() < 50) {
+        if (text == null) {
+
+            errors.put("text", "Текст поста не задан");
+
+        } else if (text.length() < 50) {
+
             errors.put("text", "Текст публикации слишком короткий");
+
         }
 
         return errors;
+    }
+
+    private String cleanTextFromTags(String text) {
+
+        String html = text;
+
+        text = Jsoup.clean(html, Whitelist.none());
+
+        return text;
     }
 
 

@@ -3,6 +3,7 @@ package main.controller;
 import main.api.request.AddCommentRequest;
 import main.api.request.PostModerationRequest;
 import main.api.request.ProfileRequest;
+import main.api.response.ApiCommentResponse;
 import main.api.response.InitResponse;
 import main.api.response.Result;
 import main.api.response.SettingsResponse;
@@ -113,9 +114,10 @@ public class ApiGeneralController {
 
     @PostMapping("/comment")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity addComment(@RequestBody AddCommentRequest request) {
+    public ResponseEntity<ApiCommentResponse> addComment(@RequestBody AddCommentRequest request) {
 
         return ResponseEntity.ok(postService.addComment(request));
+
     }
 
     @PostMapping("/moderation")

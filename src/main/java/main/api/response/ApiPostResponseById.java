@@ -15,29 +15,48 @@ import java.util.List;
 public class ApiPostResponseById {
 
     private int id;
+
     private long timestamp;
+
     private boolean active;
+
     private UserIdNameResponse user;
+
     private String title;
+
     private String text;
+
     private int likeCount;
+
     private int dislikeCount;
+
     private int viewCount;
+
     private List<Comment> comments = new ArrayList<>();
+
     private List<String> tags;
 
     public ApiPostResponseById(int id, long timestamp, boolean isActive, int userId, String userName, String title, String text,
                                 int likeCount, int dislikeCount, int viewCount, List<String> tags){
 
         this.id = id;
+
         this.timestamp = timestamp;
+
         active = isActive;
+
         user = new UserIdNameResponse(userId,userName);
+
         this.title = title;
+
         this.text = text;
+
         this.likeCount = likeCount;
+
         this.dislikeCount = dislikeCount;
+
         this.viewCount = viewCount;
+
         this.tags = tags;
 
 
@@ -46,8 +65,11 @@ public class ApiPostResponseById {
 
     public void addComment(int commentId, long commentTimestamp, String commentText, int commentUserId, String commentUserName,
                            String userPhoto){
+
         CommentUserResponse commentUserResponse = new CommentUserResponse(commentUserId, commentUserName, userPhoto);
+
         Comment comment = new Comment(commentId, commentTimestamp, commentText, commentUserResponse);
+
         comments.add(comment);
     }
 
@@ -57,17 +79,23 @@ public class ApiPostResponseById {
     class Comment{
 
         private int id;
+
         private long timestamp;
+
         private String text;
-        private CommentUserResponse userResponse;
+
+        private CommentUserResponse user;
 
     }
 
     @Data
     @AllArgsConstructor
     class CommentUserResponse{
+
         private int id;
+
         private String name;
+
         private String photo;
     }
 
@@ -76,11 +104,8 @@ public class ApiPostResponseById {
     class UserIdNameResponse{
 
         private int id;
+
         private String name;
+
     }
-
-
-
-
-
 }
