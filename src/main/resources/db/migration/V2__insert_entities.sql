@@ -17,3 +17,12 @@ insert into post_votes (post_id, time, value, user_id) values(1, CURRENT_DATE, 1
 (6, CURRENT_DATE, 1, 1);
 
 insert into global_settings (code, name, value) values("YES", "YES", "YES");
+
+insert into captcha_codes (code, secret_code, time) values("qweewwwdr", "dsdsdwe3dgrdgdgfdrrfdvs3", "2021-12-11 12:34:45"),
+("qwer", "dsdsdwe3dfdvs3", "2021-05-16 16:32:45"), ("gregrdgfdvdgrdg", "dsrdgdbdbdrdsdwe3dfdvs3", "2021-05-16 17:34:45"),
+("dsvsdvCDS", "vsdvrsferwvfdv", "2021-05-16 12:34:45"), ("qgrdgfdgrgwer", "dsdsddrgdfgfdgwe3dfdvs3", "2021-05-16 17:00:45"),
+("dvsseSSDsd", "sevsefewfVVSRE", "2021-10-11 12:34:45"), ("qgdrgdrwer", "dsdsdwegdfgdgrdFSE3dfdvs3", "2021-05-16 17:40:45");
+
+insert into tags (name) values("Тэг1"), ("Тэ21"), ("Тэг3"), ("Тэг14");
+
+insert into posts_tags (posts_id, tags_id) values(1,2), (2,3), (4,4), (2,2);

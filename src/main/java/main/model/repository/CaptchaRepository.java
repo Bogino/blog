@@ -15,7 +15,7 @@ public interface CaptchaRepository extends JpaRepository<CaptchaCodes, Integer> 
 
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM captcha_codes WHERE HOUR(TIMEDIFF(NOW(), time)) > 1", nativeQuery = true)
+    @Query(value = "DELETE FROM captcha_codes where DATE_ADD(NOW(), INTERVAL -1 HOUR) > time", nativeQuery = true)
     void deleteOldCaptchas();
 
     Optional<CaptchaCodes> findBySecretCode(String secretCode);
