@@ -37,6 +37,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -159,8 +161,6 @@ public class UserService {
 
         captchaRepository.save(captcha);
 
-        captchaRepository.deleteOldCaptchas();
-
         CaptchaImageResponse imageResponse = new CaptchaImageResponse(secret, image);
 
         return imageResponse;
@@ -203,7 +203,6 @@ public class UserService {
             errorResponse.getErrors().put("name", "Имя содержит недопустимые символы");
 
         }
-
 
         CaptchaCodes captchaCode = captchaRepository.findBySecretCode(request.getCaptchaSecret()).orElseThrow();
 

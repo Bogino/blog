@@ -14,8 +14,4 @@ public class Main {
 
     }
 
-    @PostConstruct
-    public void init() {
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    }
 }
