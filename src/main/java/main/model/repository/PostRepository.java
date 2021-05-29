@@ -3,6 +3,7 @@ package main.model.repository;
 import main.model.ModerationStatus;
 import main.model.Post;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -77,7 +78,11 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     Optional<Post> findByPostId(int postId);
 
 
+    Page<Post> getPopularPosts(String field, Pageable pageable);
 
+    @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 0 AND time <= NOW() AND user_id = ?1", nativeQuery = true)
+    Page<Post> getMyInActivePosts(Pageable pageable, int userId);
 
-
+    @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = ?1 AND time <= NOW() AND user_id = ?1", nativeQuery = true)
+    Page<Post> getMyActivePosts(String status, Pageable pageable, int userId);
 }

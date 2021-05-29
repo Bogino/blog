@@ -14,9 +14,12 @@ public class SpringConfig {
     @Autowired
     CaptchaRepository captchaRepository;
 
-    @Scheduled(fixedDelayString = "${blog.captchaLifeTimeInHours}")
+    @Value("${blog.captchaLifeTimeInHours}")
+    public int captchaLifeTimeInHour;
+
+    @Scheduled(initialDelay = 100_000, fixedDelay = 100_000)
     public void scheduleFixedDeleteCaptchas() {
-        captchaRepository.deleteOldCaptchas();
+        captchaRepository.deleteOldCaptchas(captchaLifeTimeInHour);
     }
 
 

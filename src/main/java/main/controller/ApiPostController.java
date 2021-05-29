@@ -3,18 +3,11 @@ package main.controller;
 import main.api.request.AddPostRequest;
 import main.api.request.EditPostRequest;
 import main.api.request.VoteRequest;
-import main.api.response.ApiPostResponse;
-import main.api.response.ApiPostResponseById;
-import main.api.response.ErrorResponse;
-import main.api.response.Result;
-import main.exception.PostNotFoundException;
 import main.service.PostService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/post")

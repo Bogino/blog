@@ -1,5 +1,6 @@
 package main.service;
 
+import lombok.AllArgsConstructor;
 import main.api.request.AddCommentRequest;
 import main.api.request.PostModerationRequest;
 import main.api.response.*;
@@ -10,7 +11,6 @@ import main.model.*;
 import main.model.repository.*;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,392 +23,137 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class PostService {
 
-    @Autowired
     private final PostRepository postRepository;
-
-    @Autowired
     private final UserRepository userRepository;
-
-    @Autowired
     private final PostVoteRepository postVoteRepository;
-
-    @Autowired
     private final PostCommentRepository postCommentRepository;
-
-    @Autowired
     private final TagRepository tagRepository;
-
     private final SettingsService settingsService;
 
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, PostVoteRepository postVoteRepository, PostCommentRepository postCommentRepository, TagRepository tagRepository, SettingsService settingsService) {
-
-        this.postRepository = postRepository;
-
-        this.userRepository = userRepository;
-
-        this.postVoteRepository = postVoteRepository;
-
-        this.postCommentRepository = postCommentRepository;
-
-        this.tagRepository = tagRepository;
-
-        this.settingsService = settingsService;
-    }
-
-
     @Transactional
-    public ApiPostResponse getPosts(String mode, int offset, int limit) {
+    public PostsListResponse getPosts(String mode, int offset, int limit) {
 
         int page = offset / limit;
-
         Page<Post> posts = null;
 
         switch (mode) {
-
             case ("early"):
-
-                posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").ascending()))).orElseThrow();
-
+                posts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").ascending()));
                 break;
-
             case ("best"):
-
             case ("popular"):
-
-                posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit))).orElseThrow();
-
+                posts = postRepository.getPopularPosts("ACCEPTED", PageRequest.of(page, limit));
                 break;
-
             default:
-
-                posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").descending()))).orElseThrow();
-
+                posts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").descending()));
                 break;
         }
 
-
-        ApiPostResponse apiPostResponse = new ApiPostResponse();
-
-        long count = posts.getTotalElements();
-
-        for (Post p : posts) {
-
-            int likes = 0;
-
-            int dislikes = 0;
-
-            List<PostVote> postVotes = p.getVotes().stream().collect(Collectors.toList());
-
-            int commentsCount = p.getComments().size();
-
-            for (PostVote pv : postVotes) {
-
-                if (pv.getValue() < 0) {
-
-                    dislikes++;
-
-                } else likes++;
-            }
-
-            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
-
-        }
-
-        if (mode.equals("popular")) {
-
-            apiPostResponse.sortPostsByCommentCount();
-
-        }
-
-        if (mode.equals("best")) {
-
-            apiPostResponse.sortPostsByLikes();
-
-        }
-
-        return apiPostResponse;
-
+        return getPostsList(posts);
     }
 
     @Transactional
-    public ApiPostResponse getPostsByQuery(String query, int offset, int limit) {
+    public PostsListResponse getPostsByQuery(String query, int offset, int limit) {
 
         int page = offset / limit;
-
         Pageable pageWithTenElements = PageRequest.of(page, limit);
+        Page<Post> posts = postRepository.findByTitleContaining(query, pageWithTenElements);
 
-        Page<Post> posts = Optional.of(postRepository.findByTitleContaining(query, pageWithTenElements)).orElseThrow();
-
-        ApiPostResponse apiPostResponse = new ApiPostResponse();
-
-        long count = posts.getTotalElements();
-
-        for (Post p : posts) {
-
-            int likes = 0;
-
-            int dislikes = 0;
-
-            List<PostVote> postVotes = postVoteRepository.findByPost(p);
-
-            int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
-
-            for (PostVote pv : postVotes) {
-
-                if (pv.getValue() < 0) {
-
-                    dislikes++;
-
-                } else likes++;
-            }
-
-            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
-
-        }
-
-        return apiPostResponse;
+        return getPostsList(posts);
     }
 
     @Transactional
-    public ApiPostResponseById getPostsById(int id) throws PostNotFoundException {
+    public ApiPostResponseById getPostsById(int id) {
 
         Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(() -> new PostNotFoundException("Походу нет такого поста :("));
 
-        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (SecurityContextHolder.getContext().getAuthentication().isAuthenticated()) {
+            UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
-        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-
-        if (user.getIsModerator() != 1 && !post.getUserId().equals(user)){
-
-            int count = post.getViewCount();
-
-            post.setViewCount(++count);
-
-            postRepository.save(post);
-
+            if (user.getIsModerator() != 1 && !post.getUserId().equals(user)) {
+                int count = post.getViewCount();
+                post.setViewCount(++count);
+                postRepository.save(post);
+            }
         }
 
-        int likes = 0;
+        ApiPostResponseById apiPostResponseById = new ApiPostResponseById(post);
 
-        int dislikes = 0;
-
-        List<PostVote> postVotes = postVoteRepository.findByPost(post);
-
-        for (PostVote pv : postVotes) {
-
-            if (pv.getValue() < 0) {
-
-                dislikes++;
-
-            } else likes++;
-        }
-
-        List<String> tags = tagRepository.findByPostId(post.getId());
-
-        ApiPostResponseById apiPostResponseById = new ApiPostResponseById(post.getId(), post.getTime().getTime() / 1000, true, post.getUserId().getId(), post.getUserId().getName(),
-                post.getTitle(), post.getText(), likes, dislikes, post.getViewCount(), tags);
-
-        for (PostComment pc : postCommentRepository.getCommentsByPostId(post.getId())) {
-
+        for (PostComment pc : post.getComments()) {
             apiPostResponseById.addComment(pc.getId(), pc.getTime().getTime() / 1000, pc.getText(), pc.getUserId().getId(), pc.getUserId().getName(), pc.getUserId().getPhoto());
-
         }
 
         return apiPostResponseById;
     }
 
     @Transactional
-    public ApiPostResponse getPostsByDate(String date, int offset, int limit) {
+    public PostsListResponse getPostsByDate(String date, int offset, int limit) {
 
         int page = offset / limit;
-
         Pageable pageWithTenElements = PageRequest.of(page, limit);
+        Page<Post> posts = postRepository.findByDate(date, pageWithTenElements);
 
-        Page<Post> posts = Optional.of(postRepository.findByDate(date, pageWithTenElements)).orElseThrow();
-
-        ApiPostResponse apiPostResponse = new ApiPostResponse();
-
-        long count = posts.getTotalElements();
-
-        for (Post p : posts) {
-
-            int likes = 0;
-
-            int dislikes = 0;
-
-            List<PostVote> postVotes = postVoteRepository.findByPost(p);
-
-            int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
-
-            for (PostVote pv : postVotes) {
-
-                if (pv.getValue() < 0) {
-
-                    dislikes++;
-
-                } else likes++;
-            }
-
-            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
-        }
-
-
-        return apiPostResponse;
+        return getPostsList(posts);
 
     }
 
     @Transactional
-    public ApiPostResponse getPostsByTag(String name, int offset, int limit) {
+    public PostsListResponse getPostsByTag(String name, int offset, int limit) {
 
         int page = offset / limit;
 
         Pageable pageWithTenElements = PageRequest.of(page, limit);
+        Page<Post> posts = postRepository.findByTagName(name, pageWithTenElements);
+        List<PostsListResponse.PostResponse> postsSingleResponse = new ArrayList<>();
 
-        Page<Post> posts = Optional.of(postRepository.findByTagName(name, pageWithTenElements)).orElseThrow();
-
-        ApiPostResponse apiPostResponse = new ApiPostResponse();
-
-        long count = posts.getTotalElements();
-
-        for (Post p : posts) {
-
-            int likes = 0;
-
-            int dislikes = 0;
-
-            List<PostVote> postVotes = postVoteRepository.findByPost(p);
-
-            int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
-
-            for (PostVote pv : postVotes) {
-
-                if (pv.getValue() < 0) {
-
-                    dislikes++;
-
-                } else likes++;
-            }
-
-            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
-        }
-
-
-        return apiPostResponse;
+        return getPostsList(posts);
 
     }
 
     @Transactional
-    public ApiPostResponse getPostsForModeration(String status, int offset, int limit) {
+    public PostsListResponse getPostsForModeration(String status, int offset, int limit) {
 
         int page = offset / limit;
-
         Pageable pageWithTenElements = PageRequest.of(page, limit);
+        Page<Post> posts = postRepository.getActivePosts(status, pageWithTenElements);
 
-        Page<Post> posts = Optional.of(postRepository.getActivePosts(status, pageWithTenElements)).orElseThrow();
-
-        ApiPostResponse apiPostResponse = new ApiPostResponse();
-
-        long count = posts.getTotalElements();
-
-        for (Post p : posts) {
-
-            int likes = 0;
-
-            int dislikes = 0;
-
-            List<PostVote> postVotes = postVoteRepository.findByPost(p);
-
-            int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
-
-            for (PostVote pv : postVotes) {
-
-                if (pv.getValue() < 0) {
-
-                    dislikes++;
-
-                } else likes++;
-            }
-
-            apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
-        }
-
-        return apiPostResponse;
+        return getPostsList(posts);
 
     }
 
     @Transactional
-    public ApiPostResponse getMyPosts(String status, int offset, int limit) {
+    public PostsListResponse getMyPosts(String status, int offset, int limit) {
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
         int page = offset / limit;
-
         Page<Post> posts = null;
 
         switch (status) {
-
             case ("inactive"):
-
-                posts = Optional.of(postRepository.getInActivePosts(PageRequest.of(page, limit))).orElseThrow();
-
+                posts = postRepository.getMyInActivePosts(PageRequest.of(page, limit), user.getId());
                 break;
-
             case ("pending"):
-
-                posts = Optional.of(postRepository.getActivePosts("NEW", PageRequest.of(page, limit))).orElseThrow();
-
+                posts = postRepository.getMyActivePosts("NEW", PageRequest.of(page, limit), user.getId());
                 break;
-
             case ("declined"):
-
-                posts = Optional.of(postRepository.getActivePosts("DECLINED", PageRequest.of(page, limit))).orElseThrow();
-
+                posts = postRepository.getMyActivePosts("DECLINED", PageRequest.of(page, limit), user.getId());
                 break;
-
             case ("published"):
-
-                posts = Optional.of(postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit))).orElseThrow();
-
+                posts = postRepository.getMyActivePosts("ACCEPTED", PageRequest.of(page, limit), user.getId());
                 break;
         }
 
-        ApiPostResponse apiPostResponse = new ApiPostResponse();
+        return getPostsList(posts);
 
-        long count = posts.getTotalElements();
-
-        for (Post p : posts) {
-
-            if (p.getUserId().getEmail().equals(principal.getUsername())) {
-
-                int likes = 0;
-
-                int dislikes = 0;
-
-                List<PostVote> postVotes = postVoteRepository.findByPost(p);
-
-                int commentsCount = postCommentRepository.getCountCommentsByPostId(p.getId());
-
-                for (PostVote pv : postVotes) {
-
-                    if (pv.getValue() < 0) {
-
-                        dislikes++;
-
-                    } else likes++;
-                }
-
-                apiPostResponse.addApiPostResponse(count, p.getId(), p.getTime().getTime() / 1000, p.getUserId().getId(), p.getUserId().getName(), p.getTitle(), p.getText(), likes, dislikes, commentsCount, p.getViewCount());
-            }
-        }
-
-
-        return apiPostResponse;
     }
 
     @Transactional
@@ -689,7 +434,7 @@ public class PostService {
 
         if (request.getParentId() != 0) {
 
-            postCommentRepository.findById(request.getParentId()).orElseThrow(()->new CommentNotFoundException("Комментария больше нет"));
+            postCommentRepository.findById(request.getParentId()).orElseThrow(() -> new CommentNotFoundException("Комментария больше нет"));
 
             comment.setParentId(request.getParentId());
 
@@ -837,18 +582,13 @@ public class PostService {
         Map<String, String> errors = new HashMap<>();
 
         if (title == null) {
-
             errors.put("title", "Заголовок отсутствует");
-
         } else if (title.length() < 3) {
-
             errors.put("title", "Заголовок слишком короткий");
-
         }
         if (text == null) {
 
             errors.put("text", "Текст поста не задан");
-
         } else if (text.length() < 50) {
 
             errors.put("text", "Текст публикации слишком короткий");
@@ -858,10 +598,24 @@ public class PostService {
         return errors;
     }
 
+    private PostsListResponse getPostsList(Page<Post> posts) {
+
+        List<PostsListResponse.PostResponse> postsSingleResponse = new ArrayList<>();
+
+        for (Post p : posts) {
+            postsSingleResponse.add(new PostsListResponse.PostResponse(p));
+        }
+
+        return PostsListResponse
+                .builder()
+                .count(posts.getTotalElements())
+                .posts(postsSingleResponse)
+                .build();
+    }
+
     private String cleanTextFromTags(String text) {
 
         String html = text;
-
         text = Jsoup.clean(html, Whitelist.none());
 
         return text;

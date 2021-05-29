@@ -32,7 +32,7 @@ public class Post {
     private Set<PostVote> votes;
 
     @OneToMany(mappedBy = "postId")
-    private Set<PostComment> comments;
+    private Set<PostComment> comments = new HashSet<>();
 
     private Date time;
 

@@ -13,5 +13,5 @@ blog.email: mail@mail.ru
 blog.copyright: Богино Илья
 blog.copyrightFrom: 2020
 blog.upload.folder: upload/
-blog.captchaLifeTimeInHours: 100_000
+blog.captchaLifeTimeInHours: 1
 
