@@ -27,9 +27,8 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(CommentNotFoundException.class)
-    public final void handleCommentNotFoundException(CommentNotFoundException e){
-
-        e.getMessage();
+    public final ResponseEntity<Result> handleCommentNotFoundException(CommentNotFoundException e){
+        return ResponseEntity.ok(new Result(false));
 
     }
 
@@ -37,9 +36,7 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
     public final ResponseEntity<ErrorResponse> handleNullPointerCommentTextException(){
 
         ErrorResponse response = new ErrorResponse(false, new HashMap<>());
-
         response.getErrors().put("text", "Текст не задан");
-
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 
     }
@@ -47,21 +44,16 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UsernameNotFoundException.class)
     public final ResponseEntity<Result> handleUsernameNotFoundException(UsernameNotFoundException e){
 
-        e.getMessage();
-
-        return new ResponseEntity<>(new Result(false), HttpStatus.OK);
+        return ResponseEntity.ok(new Result(false));
     }
 
     @ExceptionHandler(PostNotFoundException.class)
-    public final void handlePostNotFoundException(PostNotFoundException e) {
-        e.getMessage();
+    public final ResponseEntity<Result> handlePostNotFoundException(PostNotFoundException e) {
+        return ResponseEntity.ok(new Result(false));
     }
 
     @ExceptionHandler(AuthenticationException.class)
     public final ResponseEntity<Result> handleAuthenticationException(){
-
-        System.out.println("Логин или пароль введены неверно");
-
         return ResponseEntity.ok(new Result(false));
     }
 

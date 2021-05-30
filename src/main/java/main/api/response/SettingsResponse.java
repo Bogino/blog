@@ -13,6 +13,6 @@ public class SettingsResponse {
     private boolean postPremoderation;
 
     @JsonProperty("STATISTICS_IS_PUBLIC")
-    private boolean statisticsIsPublic;
+    private boolean statisticsIsPublic = true;
 
 }

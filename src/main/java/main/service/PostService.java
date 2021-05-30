@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class PostService {
+public class PostService implements IPostService{
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
@@ -155,7 +155,7 @@ public class PostService {
                 break;
         }
 
-        return getPostsList(posts);
+        return getPostsList(Optional.of(posts).orElseThrow(()->new PostNotFoundException("Увы, посты не найдены")));
 
     }
 
@@ -226,15 +226,11 @@ public class PostService {
         Map<String, String> errors = checkErrors(title, text);
 
         if (!errors.isEmpty()) {
-
             return new ErrorResponse(false, errors);
-
         }
 
         Post post = postRepository.findById(id).orElseThrow();
-
         Date date = null;
-
         Result result = new Result(true);
 
         if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
@@ -246,45 +242,30 @@ public class PostService {
         }
 
         post.setTime(date);
-
         post.setIsActive(active);
-
         post.setText(text);
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
         if (user.getIsModerator() == 0) {
-
             post.setStatus(ModerationStatus.valueOf("NEW"));
-
         }
 
         if (tags.size() != 0) {
 
             for (String tagName : tags) {
-
                 Tag tag = tagRepository.findByName(tagName);
-
                 if (tag != null) {
-
                     post.getTags().add(tag);
-
                 } else {
-
                     Tag newTag = new Tag();
-
                     newTag.setName(tagName);
-
                     tagRepository.save(newTag);
-
                     post.getTags().add(newTag);
-
                 }
             }
         }
-
         postRepository.save(post);
 
         return result;
@@ -294,21 +275,15 @@ public class PostService {
     public ApiCalendarResponse getCountPostsByYear(String year) {
 
         ApiCalendarResponse apiCalendarResponse = new ApiCalendarResponse();
-
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
         for (Integer y : postRepository.getYearsOfPosts()) {
-
             apiCalendarResponse.getYears().add(y);
-
         }
 
         for (Date date : postRepository.getDatesByYear(year)) {
-
             apiCalendarResponse.getPosts().put(dateFormat.format(date), postRepository.getCountPostsByDate(date));
-
         }
-
 
         return apiCalendarResponse;
 
@@ -317,11 +292,8 @@ public class PostService {
     public ApiCalendarResponse getCountPostsForCurrentYear() {
 
         ApiCalendarResponse apiCalendarResponse = new ApiCalendarResponse();
-
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
         Calendar calendar = Calendar.getInstance(TimeZone.getDefault(), Locale.getDefault());
-
         calendar.setTime(new Date());
 
         int currentYear = calendar.get(java.util.Calendar.YEAR);
@@ -329,11 +301,8 @@ public class PostService {
         apiCalendarResponse.getYears().add(currentYear);
 
         for (Date date : postRepository.getDatesByYear(String.valueOf(currentYear))) {
-
             apiCalendarResponse.getPosts().put(dateFormat.format(date), postRepository.getCountPostsByDate(date));
-
         }
-
         return apiCalendarResponse;
 
     }
@@ -341,97 +310,67 @@ public class PostService {
     public ApiStatisticResponse getStatistic() {
 
         int postsCount = postRepository.getAllAcceptedPosts().size();
-
         ArrayList<Post> posts = postRepository.getAllAcceptedPosts();
 
         int likesCount = 0;
-
         int dislikesCount = 0;
-
         int viewsCount = 0;
 
         for (Post p : posts) {
 
             viewsCount += p.getViewCount();
-
             List<PostVote> postVotes = postVoteRepository.findByPost(p);
 
             for (PostVote pv : postVotes) {
-
                 if (pv.getValue() < 0) {
-
                     dislikesCount++;
-
                 } else likesCount++;
-
             }
         }
 
         Page<Post> earlyPosts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(0, 1, Sort.by("time").ascending()));
-
         long firstPublication = earlyPosts.iterator().next().getTime().getTime() / 1000;
-
         ApiStatisticResponse apiStatisticResponse = new ApiStatisticResponse(postsCount, likesCount, dislikesCount, viewsCount, firstPublication);
 
-        if (settingsService.getGlobalSettings().isStatisticsIsPublic() == true) {
-
+        if (settingsService.getGlobalSettings().isStatisticsIsPublic()) {
             return apiStatisticResponse;
-
         } else {
 
             UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
             User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-
             if (user.getIsModerator() == 1) {
 
                 return apiStatisticResponse;
-
             }
-
         }
 
         return apiStatisticResponse;
-
-
     }
 
     @Transactional
     public ApiCommentResponse addComment(AddCommentRequest request) throws NullPointerCommentTextException {
 
         if (request.getText() == null) {
-
             throw new NullPointerCommentTextException();
-
         }
 
         PostComment comment = new PostComment();
 
         if (request.getParentId() != 0) {
-
             postCommentRepository.findById(request.getParentId()).orElseThrow(() -> new CommentNotFoundException("Комментария больше нет"));
-
             comment.setParentId(request.getParentId());
 
         }
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-
         comment.setTime(new Date());
-
         comment.setUserId(user);
-
         comment.setText(cleanTextFromTags(request.getText()));
-
         comment.setPostId(postRepository.findByIdAcceptedPost(request.getPostId()).orElseThrow());
-
         postCommentRepository.save(comment);
 
-        ApiCommentResponse response = new ApiCommentResponse(comment.getId());
-
-        return response;
+        return new ApiCommentResponse(comment.getId());
 
     }
 
@@ -439,24 +378,15 @@ public class PostService {
     public Result moderate(PostModerationRequest request) {
 
         Result result = new Result(true);
-
         Post post = postRepository.findByPostId(request.getPostId()).orElseThrow();
-
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-
         post.setModeratorId(user);
 
-
         if (request.getDecision().equals("accept")) {
-
             post.setStatus(ModerationStatus.ACCEPTED);
-
         } else {
-
             post.setStatus(ModerationStatus.DECLINED);
-
         }
 
         postRepository.save(post);
@@ -469,37 +399,24 @@ public class PostService {
     public Result likePost(int postId) {
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-
         Post post = postRepository.findByPostId(postId).orElseThrow();
-
         PostVote postVote = postVoteRepository.findByUserIdAndPostId(post, user);
 
         if (postVote == null) {
-
             postVote = new PostVote();
-
             postVote.setUserId(user);
-
             postVote.setPostId(post);
-
             postVote.setValue(1);
-
             postVoteRepository.save(postVote);
-
             return new Result(true);
         }
 
         if (postVote.getValue() > 0) {
-
             return new Result(false);
-
         }
         if (postVote.getValue() < 0) {
-
             postVote.setValue(1);
-
         }
 
         postVoteRepository.save(postVote);
@@ -512,38 +429,24 @@ public class PostService {
     public Result dislikePost(int postId) {
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-
         Post post = postRepository.findById(postId).orElseThrow();
-
         PostVote postVote = postVoteRepository.findByUserIdAndPostId(post, user);
 
         if (postVote == null) {
-
             postVote = new PostVote();
-
             postVote.setUserId(user);
-
             postVote.setPostId(post);
-
             postVote.setValue(-1);
-
             postVoteRepository.save(postVote);
-
             return new Result(true);
         }
 
         if (postVote.getValue() < 0) {
-
             return new Result(false);
-
         }
-
         if (postVote.getValue() > 0) {
-
             postVote.setValue(-1);
-
         }
 
         postVoteRepository.save(postVote);
@@ -562,12 +465,9 @@ public class PostService {
             errors.put("title", "Заголовок слишком короткий");
         }
         if (text == null) {
-
             errors.put("text", "Текст поста не задан");
         } else if (text.length() < 50) {
-
             errors.put("text", "Текст публикации слишком короткий");
-
         }
 
         return errors;
@@ -577,7 +477,7 @@ public class PostService {
 
         List<PostsListResponse.PostResponse> postsSingleResponse = posts
                 .stream()
-                .map(post -> new PostsListResponse.PostResponse(post))
+                .map(PostsListResponse.PostResponse::new)
                 .collect(Collectors.toList());
 
         return PostsListResponse
@@ -588,10 +488,8 @@ public class PostService {
     }
 
     private String cleanTextFromTags(String text) {
-
         String html = text;
         text = Jsoup.clean(html, Whitelist.none());
-
         return text;
     }
 

@@ -9,12 +9,13 @@ import main.model.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-public class TagService {
+public class TagService implements ITagService {
 
 
     @Autowired
@@ -30,7 +31,7 @@ public class TagService {
 
     public ApiTagResponse getTags() {
 
-        Set<Tag> tags = tagRepository.findAll().stream().collect(Collectors.toSet());
+        Set<Tag> tags = new HashSet<>(tagRepository.findAll());
 
         if (tags.isEmpty()) {
             return new ApiTagResponse();
