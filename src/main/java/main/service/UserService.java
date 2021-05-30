@@ -17,6 +17,7 @@ import main.model.repository.CaptchaRepository;
 import main.model.repository.PostRepository;
 import main.model.repository.UserRepository;
 import org.imgscalr.Scalr;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -43,16 +44,20 @@ import java.util.regex.Pattern;
 
 @Service
 @Data
-@AllArgsConstructor
 public class UserService implements IUserService {
 
+    @Autowired
     private final UserRepository userRepository;
+    @Autowired
     private final CaptchaRepository captchaRepository;
+    @Autowired
     private final PostRepository postRepository;
+    @Autowired
     private final PasswordEncoder passwordEncoder;
+    @Autowired
     public final JavaMailSender emailSender;
+    @Autowired
     private final AuthenticationManager authenticationManager;
-
     @Value("${blog.upload.folder}")
     private String path;
 

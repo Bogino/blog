@@ -3,7 +3,7 @@ spring.datasource.username: root
 spring.datasource.password: testtest
 spring.jpa.hibernate.ddl-auto: none
 spring.jpa.show-sql: false
-
+spring.main.allow-bean-definition-overriding: true
 
 
 blog.title: DevPub

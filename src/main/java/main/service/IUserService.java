@@ -11,7 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface IUserService {
 
-
     LoginResponse getLoginResponse(String email);
 
     CaptchaImageResponse getCaptcha();
