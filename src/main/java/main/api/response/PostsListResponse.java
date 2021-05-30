@@ -17,10 +17,6 @@ public class PostsListResponse {
     private long count;
     private List<PostResponse> posts;
 
-    public PostsListResponse() {
-        posts = new ArrayList<>();
-    }
-
 
     @Data
     @AllArgsConstructor

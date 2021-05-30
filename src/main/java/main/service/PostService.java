@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -47,8 +48,10 @@ public class PostService {
                 posts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").ascending()));
                 break;
             case ("best"):
+                posts = postRepository.getBestPosts(PageRequest.of(page, limit));
+                break;
             case ("popular"):
-                posts = postRepository.getPopularPosts("ACCEPTED", PageRequest.of(page, limit));
+                posts = postRepository.getPopularPosts(PageRequest.of(page, limit));
                 break;
             default:
                 posts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").descending()));
@@ -160,77 +163,49 @@ public class PostService {
     public Result addPost(long timestamp, int active, String title, List<String> tags, String text) {
 
         text = cleanTextFromTags(text);
-
         Map<String, String> errors = checkErrors(title, text);
 
         if (!errors.isEmpty()) {
-
             return new ErrorResponse(false, errors);
-
         }
 
         Post post = new Post();
-
         Date date = null;
-
         Result result = new Result(true);
 
         if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
-
             date = new Date(timestamp);
-
         }
         if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
-
             date = new Date();
-
         }
 
         if (settingsService.getGlobalSettings().isPostPremoderation()) {
-
             post.setStatus(ModerationStatus.valueOf("NEW"));
-
         } else if (post.getIsActive() == 1) {
-
             post.setStatus(ModerationStatus.ACCEPTED);
-
         }
 
         post.setTime(date);
-
         post.setIsActive(active);
-
         post.setTitle(title);
-
         post.setText(text);
-
         post.setViewCount(0);
-
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-
         post.setUserId(user);
 
 
         if (tags.size() != 0) {
 
             for (String tagName : tags) {
-
                 Tag tag = tagRepository.findByName(tagName);
-
                 if (tag != null) {
-
                     post.getTags().add(tag);
-
                 } else {
-
                     Tag newTag = new Tag();
-
                     newTag.setName(tagName);
-
                     tagRepository.save(newTag);
-
                     post.getTags().add(newTag);
 
                 }
@@ -600,11 +575,10 @@ public class PostService {
 
     private PostsListResponse getPostsList(Page<Post> posts) {
 
-        List<PostsListResponse.PostResponse> postsSingleResponse = new ArrayList<>();
-
-        for (Post p : posts) {
-            postsSingleResponse.add(new PostsListResponse.PostResponse(p));
-        }
+        List<PostsListResponse.PostResponse> postsSingleResponse = posts
+                .stream()
+                .map(post -> new PostsListResponse.PostResponse(post))
+                .collect(Collectors.toList());
 
         return PostsListResponse
                 .builder()

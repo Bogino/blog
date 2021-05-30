@@ -78,11 +78,23 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     Optional<Post> findByPostId(int postId);
 
 
-    Page<Post> getPopularPosts(String field, Pageable pageable);
+    @Query(value = "SELECT * FROM posts\n" +
+            "JOIN post_comments ON posts.id = post_comments.post_id\n" +
+            "WHERE moderation_status = 'ACCEPTED'\n" +
+            "GROUP BY post_comments.post_id\n" +
+            "ORDER BY count(*) DESC", nativeQuery = true)
+    Page<Post> getPopularPosts(Pageable pageable);
 
     @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 0 AND time <= NOW() AND user_id = ?1", nativeQuery = true)
     Page<Post> getMyInActivePosts(Pageable pageable, int userId);
 
     @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = ?1 AND time <= NOW() AND user_id = ?1", nativeQuery = true)
     Page<Post> getMyActivePosts(String status, Pageable pageable, int userId);
+
+    @Query(value = "SELECT * FROM posts\n" +
+            "JOIN post_votes ON posts.id = post_votes.post_id\n" +
+            "WHERE moderation_status = 'ACCEPTED' AND post_votes.value > 0\n" +
+            "GROUP BY post_votes.post_id\n" +
+            "ORDER BY count(*) DESC", nativeQuery = true)
+    Page<Post> getBestPosts(Pageable pageable);
 }
