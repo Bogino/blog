@@ -1,7 +1,7 @@
 package main.model;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,7 +34,7 @@ public class Post {
     @OneToMany(mappedBy = "postId")
     private Set<PostComment> comments = new HashSet<>();
 
-    private Date time;
+    private LocalDateTime time;
 
     private String title;
 
@@ -99,11 +99,11 @@ public class Post {
         this.userId = userId;
     }
 
-    public Date getTime() {
+    public LocalDateTime getTime() {
         return time;
     }
 
-    public void setTime(Date time) {
+    public void setTime(LocalDateTime time) {
         this.time = time;
     }
 

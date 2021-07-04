@@ -35,12 +35,12 @@ public class PostsListResponse {
 
         public PostResponse(Post post) {
             id = post.getId();
-            timestamp = post.getTime().getTime();
+            timestamp = post.getTime().getSecond() * 1000;
             userIdNameResponse = new UserIdNameResponse(post.getUserId().getId(), post.getUserId().getName());
             title = post.getTitle();
             announce = post.getText();
-            likeCount =post.getVotes().stream().filter(v -> v.getValue() > 0).count();;
-            dislikeCount =post.getVotes().stream().filter(v -> v.getValue() < 0).count();;
+            likeCount =post.getVotes().stream().filter(v -> v.getValue() > 0).count();
+            dislikeCount =post.getVotes().stream().filter(v -> v.getValue() < 0).count();
             commentCount = post.getComments().size();
             viewCount = post.getViewCount();
         }

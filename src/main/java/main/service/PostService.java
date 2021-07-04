@@ -23,6 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -78,7 +82,7 @@ public class PostService implements IPostService{
         Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(() -> new PostNotFoundException("Походу нет такого поста :("));
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (SecurityContextHolder.getContext().getAuthentication().isAuthenticated()) {
             UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
@@ -172,14 +176,14 @@ public class PostService implements IPostService{
         }
 
         Post post = new Post();
-        Date date = null;
+        LocalDateTime date = null;
         Result result = new Result(true);
 
         if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
-            date = new Date(timestamp);
+            date = LocalDateTime.of(LocalDateTime.now().toLocalDate(), LocalTime.ofSecondOfDay(timestamp/1000));
         }
         if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
-            date = new Date();
+            date = LocalDateTime.now().toInstant(ZoneOffset.UTC).atZone(TimeZone.getDefault().toZoneId()).toLocalDateTime();
         }
 
         if (settingsService.getGlobalSettings().isPostPremoderation()) {
@@ -232,15 +236,15 @@ public class PostService implements IPostService{
         }
 
         Post post = postRepository.findById(id).orElseThrow();
-        Date date = null;
+        LocalDateTime date = null;
         Result result = new Result(true);
 
         if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
-            date = new Date(timestamp);
+            date = LocalDateTime.of(LocalDate.now(), LocalTime.ofSecondOfDay(timestamp/1000));
         }
 
         if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp || timestamp == 0) {
-            date = new Date();
+            date = LocalDateTime.now();
         }
 
         post.setTime(date);
@@ -331,7 +335,7 @@ public class PostService implements IPostService{
         }
 
         Page<Post> earlyPosts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(0, 1, Sort.by("time").ascending()));
-        long firstPublication = earlyPosts.iterator().next().getTime().getTime() / 1000;
+        long firstPublication = earlyPosts.iterator().next().getTime().getSecond();
         ApiStatisticResponse apiStatisticResponse = new ApiStatisticResponse(postsCount, likesCount, dislikesCount, viewsCount, firstPublication);
 
         if (settingsService.getGlobalSettings().isStatisticsIsPublic()) {

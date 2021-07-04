@@ -29,14 +29,14 @@ public class ApiPostResponseById {
     public ApiPostResponseById(Post post){
 
         id = post.getId();
-        timestamp = post.getTime().getTime();
+        timestamp = post.getTime().getSecond() * 1000;
         user = new UserIdNameResponse(post.getUserId().getId(),post.getUserId().getName());
         title = post.getTitle();
         text = post.getText();
         likeCount =post.getVotes().stream().filter(v -> v.getValue() > 0).count();
         dislikeCount =post.getVotes().stream().filter(v -> v.getValue() < 0).count();
         viewCount = post.getViewCount();
-        tags = post.getTags().stream().map(tag -> tag.getName()).collect(Collectors.toSet());
+        tags = post.getTags().stream().map(Tag::getName).collect(Collectors.toSet());
     }
 
     public void addComment(int commentId, long commentTimestamp, String commentText, int commentUserId, String commentUserName,
