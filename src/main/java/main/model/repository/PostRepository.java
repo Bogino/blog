@@ -88,7 +88,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 0 AND time <= NOW() AND user_id = ?1", nativeQuery = true)
     Page<Post> getMyInActivePosts(Pageable pageable, int userId);
 
-    @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = ?1 AND time <= NOW() AND user_id = ?1", nativeQuery = true)
+    @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = ?1 AND time <= NOW() AND user_id = ?2", nativeQuery = true)
     Page<Post> getMyActivePosts(String status, Pageable pageable, int userId);
 
     @Query(value = "SELECT * FROM posts\n" +
