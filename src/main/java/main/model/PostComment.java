@@ -3,6 +3,7 @@ package main.model;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data
@@ -25,7 +26,7 @@ public class PostComment {
     @JoinColumn(name = "user_id", nullable = false)
     private User userId;
 
-    private Date time;
+    private LocalDateTime time;
 
     @Column(columnDefinition = "Text")
     private String text;

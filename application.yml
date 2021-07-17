@@ -9,7 +9,7 @@ spring.main.allow-bean-definition-overriding: true
 blog.title: DevPub
 blog.subtitle: Рассказы разработчиков
 blog.phone: 8 999 777-44-33
-blog.email: mail@mail.ru
+blog.email: ibogino@yandex.ru
 blog.copyright: Богино Илья
 blog.copyrightFrom: 2020
 blog.upload.folder: upload/

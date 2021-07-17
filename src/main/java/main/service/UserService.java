@@ -38,6 +38,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -98,7 +100,7 @@ public class UserService implements IUserService {
         String image = prefix + encodedString;
         byte[] array = new byte[256];
         new Random().nextBytes(array);
-        String randomString = new String(array, Charset.forName("UTF-8"));
+        String randomString = new String(array, StandardCharsets.UTF_8);
         StringBuffer sb = new StringBuffer();
         String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
 
@@ -115,7 +117,7 @@ public class UserService implements IUserService {
         CaptchaCodes captcha = new CaptchaCodes();
         captcha.setCode(shortCode);
         captcha.setSecretCode(secret);
-        captcha.setTime(new Date());
+        captcha.setTime(LocalDateTime.now());
         captchaRepository.save(captcha);
 
         return new CaptchaImageResponse(secret, image);
@@ -161,7 +163,7 @@ public class UserService implements IUserService {
         user.setEmail(request.getEmail());
         user.setName(request.getName());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRegTime(new Date());
+        user.setRegTime(LocalDateTime.now());
         userRepository.save(user);
 
         return result;
@@ -195,7 +197,7 @@ public class UserService implements IUserService {
 
         new Random().nextBytes(array);
 
-        String randomString = new String(array, Charset.forName("UTF-8"));
+        String randomString = new String(array, StandardCharsets.UTF_8);
         StringBuffer sb = new StringBuffer();
         String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
 
@@ -212,7 +214,6 @@ public class UserService implements IUserService {
         user.setCode(sb.toString());
         userRepository.save(user);
         message.setText("/login/change-password/" + sb.toString());
-
 
         this.emailSender.send(message);
 
@@ -340,7 +341,7 @@ public class UserService implements IUserService {
         try {
             byte[] array = new byte[256];
             new Random().nextBytes(array);
-            String randomString = new String(array, Charset.forName("UTF-8"));
+            String randomString = new String(array, StandardCharsets.UTF_8);
             StringBuffer sb = new StringBuffer();
             String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
 
@@ -372,7 +373,7 @@ public class UserService implements IUserService {
         try {
             byte[] array = new byte[256];
             new Random().nextBytes(array);
-            String randomString = new String(array, Charset.forName("UTF-8"));
+            String randomString = new String(array, StandardCharsets.UTF_8);
             StringBuffer sb = new StringBuffer();
             String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
 

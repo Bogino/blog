@@ -3,6 +3,7 @@ package main.model;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 
@@ -19,7 +20,7 @@ public class User {
     private int isModerator;
 
     @Column(name = "reg_time")
-    private Date regTime;
+    private LocalDateTime regTime;
 
     private String name;
 

@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -23,10 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -82,10 +80,9 @@ public class PostService implements IPostService{
         Post post = postRepository.findByIdAcceptedPost(id).orElseThrow(() -> new PostNotFoundException("Походу нет такого поста :("));
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (SecurityContextHolder.getContext().getAuthentication().isAuthenticated()) {
+        if (isUserAuthenticated()) {
             UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-
             if (user.getIsModerator() != 1 && !post.getUserId().equals(user)) {
                 int count = post.getViewCount();
                 post.setViewCount(++count);
@@ -96,7 +93,9 @@ public class PostService implements IPostService{
         ApiPostResponseById apiPostResponseById = new ApiPostResponseById(post);
 
         for (PostComment pc : post.getComments()) {
-            apiPostResponseById.addComment(pc.getId(), pc.getTime().getTime() / 1000, pc.getText(), pc.getUserId().getId(), pc.getUserId().getName(), pc.getUserId().getPhoto());
+            apiPostResponseById.addComment(pc.getId(),
+                    pc.getTime().toLocalTime().toEpochSecond(LocalDate.now(),ZoneOffset.UTC) / 1000,
+                    pc.getText(), pc.getUserId().getId(), pc.getUserId().getName(), pc.getUserId().getPhoto());
         }
 
         return apiPostResponseById;
@@ -176,14 +175,11 @@ public class PostService implements IPostService{
         }
 
         Post post = new Post();
-        LocalDateTime date = null;
         Result result = new Result(true);
+        LocalDateTime date = LocalDateTime.now();
 
-        if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
-            date = LocalDateTime.of(LocalDateTime.now().toLocalDate(), LocalTime.ofSecondOfDay(timestamp/1000));
-        }
-        if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp) {
-            date = LocalDateTime.now().toInstant(ZoneOffset.UTC).atZone(TimeZone.getDefault().toZoneId()).toLocalDateTime();
+        if (date.toLocalTime().toEpochSecond(LocalDate.now(),ZoneOffset.UTC) > timestamp) {
+            date = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
         }
 
         if (settingsService.getGlobalSettings().isPostPremoderation()) {
@@ -236,15 +232,11 @@ public class PostService implements IPostService{
         }
 
         Post post = postRepository.findById(id).orElseThrow();
-        LocalDateTime date = null;
         Result result = new Result(true);
+        LocalDateTime date = LocalDateTime.now();
 
-        if (Calendar.getInstance().getTime().getTime() / 1000 < timestamp) {
-            date = LocalDateTime.of(LocalDate.now(), LocalTime.ofSecondOfDay(timestamp/1000));
-        }
-
-        if (Calendar.getInstance().getTime().getTime() / 1000 > timestamp || timestamp == 0) {
-            date = LocalDateTime.now();
+        if (date.toLocalTime().toEpochSecond(LocalDate.now(),ZoneOffset.UTC) > timestamp) {
+            date = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
         }
 
         post.setTime(date);
@@ -370,7 +362,7 @@ public class PostService implements IPostService{
 
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-        comment.setTime(new Date());
+        comment.setTime(LocalDateTime.now());
         comment.setUserId(user);
         comment.setText(cleanTextFromTags(request.getText()));
         comment.setPostId(postRepository.findByIdAcceptedPost(request.getPostId()).orElseThrow());
@@ -497,6 +489,13 @@ public class PostService implements IPostService{
         String html = text;
         text = Jsoup.clean(html, Whitelist.none());
         return text;
+    }
+
+    private boolean isUserAuthenticated() {
+        return !SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getAuthorities()
+                .contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
     }
 
 
