@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,13 +50,13 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     ArrayList<Post> getAllAcceptedPosts();
 
     @Query(value = "SELECT time_post FROM posts WHERE YEAR(time_post) = ?1 AND moderation_status = 'ACCEPTED' AND time_post <= NOW()", nativeQuery = true)
-    ArrayList<LocalDateTime> getDatesByYear(String year);
+    ArrayList<Date> getDatesByYear(String year);
 
     @Query(value = "SELECT distinct year(time_post) FROM posts WHERE moderation_status = 'ACCEPTED' AND time_post <= NOW()", nativeQuery = true)
     ArrayList<Integer> getYearsOfPosts();
 
     @Query(value = "SELECT COUNT(*) FROM posts WHERE time_post = ?1 AND moderation_status = 'ACCEPTED' AND time_post <= NOW()", nativeQuery = true)
-    int getCountPostsByDate(LocalDateTime date);
+    int getCountPostsByDate(Date date);
 
     @Query(value = "SELECT * FROM posts WHERE id = ?1 AND IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time_post <= NOW()", nativeQuery = true)
     Optional<Post> findByIdAcceptedPost(int id);

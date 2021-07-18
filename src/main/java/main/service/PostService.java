@@ -297,7 +297,7 @@ public class PostService implements IPostService{
 
         apiCalendarResponse.getYears().add(currentYear);
 
-        for (LocalDateTime date : postRepository.getDatesByYear(String.valueOf(currentYear))) {
+        for (Date date : postRepository.getDatesByYear(String.valueOf(currentYear))) {
             apiCalendarResponse.getPosts().put(dateFormat.format(date), postRepository.getCountPostsByDate(date));
         }
         return apiCalendarResponse;
