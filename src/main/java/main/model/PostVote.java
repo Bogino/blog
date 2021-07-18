@@ -3,6 +3,7 @@ package main.model;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -22,7 +23,8 @@ public class PostVote {
     @JoinColumn(name = "post_id", nullable = false)
     private Post postId;
 
-    private Date time = new Date();
+    @Column(name = "time_vote")
+    private LocalDateTime time = LocalDateTime.now();
 
     private int value;
 

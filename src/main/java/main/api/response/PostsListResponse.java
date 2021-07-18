@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import main.model.Post;
 
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -35,7 +36,7 @@ public class PostsListResponse {
 
         public PostResponse(Post post) {
             id = post.getId();
-            timestamp = post.getTime().getSecond() * 1000;
+            timestamp = post.getTime().toEpochSecond(ZoneOffset.UTC);
             userIdNameResponse = new UserIdNameResponse(post.getUserId().getId(), post.getUserId().getName());
             title = post.getTitle();
             announce = post.getText();

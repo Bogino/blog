@@ -14,6 +14,7 @@ public class CaptchaCodes {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Column(name = "captcha_time")
     private LocalDateTime time;
 
     private String code;

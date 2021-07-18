@@ -112,18 +112,6 @@
     </dependencies>
     <build>
         <plugins>
-             <plugin>
-                 <groupId>org.flywaydb</groupId>
-                 <artifactId>flyway-maven-plugin</artifactId>
-                 <version>4.0.3</version>
-                 <configuration>
-                     <user>root</user>
-                     <password>testtest</password>
-                     <schemas>
-                         <schema>blog</schema>
-                     </schemas>
-                 </configuration>
-             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

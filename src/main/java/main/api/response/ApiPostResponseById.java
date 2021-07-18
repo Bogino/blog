@@ -7,6 +7,7 @@ import main.model.Tag;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,7 +30,7 @@ public class ApiPostResponseById {
     public ApiPostResponseById(Post post){
 
         id = post.getId();
-        timestamp = post.getTime().getSecond() * 1000;
+        timestamp = post.getTime().toEpochSecond(ZoneOffset.UTC);
         user = new UserIdNameResponse(post.getUserId().getId(),post.getUserId().getName());
         title = post.getTitle();
         text = post.getText();

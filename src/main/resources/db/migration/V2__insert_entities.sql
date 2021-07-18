@@ -31,7 +31,7 @@ insert into users (is_moderator, reg_time, name, email, password, code, photo) v
 (0, CURRENT_DATE, "Илья", "iboginsdvsdvo@yandex.ru", "$2y$12$Im5T.yooVrI18uQWsdfsdfsvdDIXuEoPsSUfMDYt8oBZOYDrDeO.WhDHAnNm", NULL, NULL);
 
 
-insert into posts (is_active, moderation_status, text, time, title, view_count, moderator_id, user_id) values(true, "ACCEPTED", "Текст поста от Вани по Java", "2020-12-01 12:34:45", "Заголовок от Вани", 154, 2, 1), (true, "ACCEPTED", "Текст поста от Сани по C#", "2020-12-02 12:34:45", "Заголовок от Сани", 150, 2, 2),
+insert into posts (is_active, moderation_status, text, time_post, title, view_count, moderator_id, user_id) values(true, "ACCEPTED", "Текст поста от Вани по Java", "2020-12-01 12:34:45", "Заголовок от Вани", 154, 2, 1), (true, "ACCEPTED", "Текст поста от Сани по C#", "2020-12-02 12:34:45", "Заголовок от Сани", 150, 2, 2),
 (true, "ACCEPTED", "Текст поста от Сани по Еде", "2020-12-03 12:34:45", "Заголовок от Сани про еду", 120, 2, 2), (true, "ACCEPTED", "Второй текст поста от Сани по Еде", "2020-12-04 12:34:45", "Заголовок второго посата от Сани про еду", 120, 2, 1),
 (true, "ACCEPTED", "Третий текст поста от Ильи по Еде", "2020-12-05 12:34:45", "Заголовок третьего посата от Ильи про еду", 120, 2, 3), (true, "ACCEPTED", "Четвертый текст поста от Сани по Еде", "2020-12-06 12:34:45", "Заголовок четвертого посата от Сани про еду", 120, 2, 1),
 (true, "ACCEPTED", "Пятый текст поста от Сани по Еде", "2020-12-07 12:34:45", "Заголовок пятого посата от Сани про еду", 120, 2, 1), (true, "ACCEPTED", "Шестой текст поста от Сани по Еде", "2020-12-08 12:34:45", "Заголовок шестого посата от Сани про еду", 120, 2, 1),
@@ -48,9 +48,9 @@ insert into posts (is_active, moderation_status, text, time, title, view_count, 
 (true, "ACCEPTED", "Одинадцатый текст поста от Сани по Еде", "2020-12-13 12:34:45", "Заголовок 11 посата от Сани про еду", 120, NULL, 2), (true, "ACCEPTED", "Двенадцатый текст поста от Сани по Еде", "2020-12-14 12:34:45", "Заголовок 12 посата от Сани про еду", 120, 2, 1),
 (true, "ACCEPTED", "Одинадцатый текст поста от Сани по Еде", "2020-12-13 12:34:45", "Заголовок 11 посата от Сани про еду", 120, NULL, 2), (true, "ACCEPTED", "Двенадцатый текст поста от Сани по Еде", "2020-12-14 12:34:45", "Заголовок 12 посата от Сани про еду", 120, 2, 1);
 
-insert into post_comments (parent_id, post_id, text, time, user_id) values(NULL, 1, "Хороший пост, мне очень нравится между прочим, это Люба говорит", CURRENT_DATE, 1), (1, 1, "Cогласен с тобой", CURRENT_DATE, 2);
+insert into post_comments (parent_id, post_id, text, time_comment, user_id) values(NULL, 1, "Хороший пост, мне очень нравится между прочим, это Люба говорит", CURRENT_DATE, 1), (1, 1, "Cогласен с тобой", CURRENT_DATE, 2);
 
-insert into post_votes (post_id, time, value, user_id) values(1, CURRENT_DATE, -1, 1),
+insert into post_votes (post_id, time_vote, value, user_id) values(1, CURRENT_DATE, -1, 1),
 (1, CURRENT_DATE, -1, 2), (1, CURRENT_DATE, -1, 3), (1, CURRENT_DATE, -1, 4), (1, CURRENT_DATE, -1, 5),
 (1, CURRENT_DATE, -1, 6), (1, CURRENT_DATE, -1, 7), (1, CURRENT_DATE, -1, 8), (1, CURRENT_DATE, -1, 9),
 (1, CURRENT_DATE, -1, 10), (1, CURRENT_DATE, -1, 11), (1, CURRENT_DATE, -1, 12),
@@ -63,7 +63,7 @@ insert into post_votes (post_id, time, value, user_id) values(1, CURRENT_DATE, -
 
 insert into global_settings (code, name, value) values("YES", "YES", "YES");
 
-insert into captcha_codes (code, secret_code, time) values("qweewwwdr", "dsdsdwe3dgrdgdgfdrrfdvs3", "2021-12-11 12:34:45"),
+insert into captcha_codes (code, secret_code, captcha_time) values("qweewwwdr", "dsdsdwe3dgrdgdgfdrrfdvs3", "2021-12-11 12:34:45"),
 ("qwer", "dsdsdwe3dfdvs3", "2021-05-16 16:32:45"), ("gregrdgfdvdgrdg", "dsrdgdbdbdrdsdwe3dfdvs3", "2021-05-16 17:34:45"),
 ("dsvsdvCDS", "vsdvrsferwvfdv", "2021-05-16 12:34:45"), ("qgrdgfdgrgwer", "dsdsddrgdfgfdgwe3dfdvs3", "2021-05-16 17:00:45"),
 ("dvsseSSDsd", "sevsefewfVVSRE", "2021-10-11 12:34:45"), ("qgdrgdrwer", "dsdsdwegdfgdgrdFSE3dfdvs3", "2021-05-16 17:40:45");

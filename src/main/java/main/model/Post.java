@@ -34,6 +34,7 @@ public class Post {
     @OneToMany(mappedBy = "postId")
     private Set<PostComment> comments = new HashSet<>();
 
+    @Column(name = "time_post")
     private LocalDateTime time;
 
     private String title;

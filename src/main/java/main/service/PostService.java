@@ -48,7 +48,7 @@ public class PostService implements IPostService{
 
         switch (mode) {
             case ("early"):
-                posts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").ascending()));
+                posts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time_post").ascending()));
                 break;
             case ("best"):
                 posts = postRepository.getBestPosts(PageRequest.of(page, limit));
@@ -57,7 +57,7 @@ public class PostService implements IPostService{
                 posts = postRepository.getPopularPosts(PageRequest.of(page, limit));
                 break;
             default:
-                posts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time").descending()));
+                posts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(page, limit, Sort.by("time_post").descending()));
                 break;
         }
 
@@ -178,7 +178,7 @@ public class PostService implements IPostService{
         Result result = new Result(true);
         LocalDateTime date = LocalDateTime.now();
 
-        if (date.toLocalTime().toEpochSecond(LocalDate.now(),ZoneOffset.UTC) > timestamp) {
+        if (date.toEpochSecond(ZoneOffset.UTC) > timestamp) {
             date = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
         }
 
@@ -235,7 +235,7 @@ public class PostService implements IPostService{
         Result result = new Result(true);
         LocalDateTime date = LocalDateTime.now();
 
-        if (date.toLocalTime().toEpochSecond(LocalDate.now(),ZoneOffset.UTC) > timestamp) {
+        if (date.toEpochSecond(ZoneOffset.UTC) > timestamp) {
             date = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
         }
 
@@ -279,9 +279,10 @@ public class PostService implements IPostService{
             apiCalendarResponse.getYears().add(y);
         }
 
-        for (Date date : postRepository.getDatesByYear(year)) {
-            apiCalendarResponse.getPosts().put(dateFormat.format(date), postRepository.getCountPostsByDate(date));
-        }
+        postRepository.getDatesByYear(year)
+                .forEach(date -> apiCalendarResponse
+                        .getPosts()
+                        .put(dateFormat.format(date), postRepository.getCountPostsByDate(date)));
 
         return apiCalendarResponse;
 
@@ -291,14 +292,12 @@ public class PostService implements IPostService{
 
         ApiCalendarResponse apiCalendarResponse = new ApiCalendarResponse();
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        Calendar calendar = Calendar.getInstance(TimeZone.getDefault(), Locale.getDefault());
-        calendar.setTime(new Date());
 
-        int currentYear = calendar.get(java.util.Calendar.YEAR);
+        int currentYear = LocalDateTime.now().getYear();
 
         apiCalendarResponse.getYears().add(currentYear);
 
-        for (Date date : postRepository.getDatesByYear(String.valueOf(currentYear))) {
+        for (LocalDateTime date : postRepository.getDatesByYear(String.valueOf(currentYear))) {
             apiCalendarResponse.getPosts().put(dateFormat.format(date), postRepository.getCountPostsByDate(date));
         }
         return apiCalendarResponse;

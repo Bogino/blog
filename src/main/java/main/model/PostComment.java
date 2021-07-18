@@ -26,6 +26,7 @@ public class PostComment {
     @JoinColumn(name = "user_id", nullable = false)
     private User userId;
 
+    @Column(name = "time_comment")
     private LocalDateTime time;
 
     @Column(columnDefinition = "Text")
