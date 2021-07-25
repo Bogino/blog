@@ -42,4 +42,5 @@ public interface IPostService {
     Result dislikePost(int postId);
 
 
+    ApiStatisticResponse getMyStatistic();
 }

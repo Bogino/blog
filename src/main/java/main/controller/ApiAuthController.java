@@ -4,6 +4,7 @@ import main.api.request.ChangePasswordRequest;
 import main.api.request.EmailRestoreRequest;
 import main.api.request.LoginRequest;
 import main.api.request.RegisterRequest;
+import main.api.response.CaptchaImageResponse;
 import main.api.response.LoginResponse;
 import main.api.response.Result;
 import main.service.SettingsService;
@@ -35,7 +36,7 @@ public class ApiAuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
 
         return ResponseEntity.ok(userService.login(loginRequest));
 
@@ -53,40 +54,40 @@ public class ApiAuthController {
 
 
     @GetMapping("/captcha")
-    public ResponseEntity getCaptcha() {
+    public ResponseEntity<CaptchaImageResponse> getCaptcha() {
 
         return new ResponseEntity(userService.getCaptcha(), HttpStatus.OK);
 
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<Result> register(@RequestBody RegisterRequest request) {
 
-        if (settingsService.getGlobalSettings().isMultiuserMode() == true) {
+        if (settingsService.getSettingsResponse().isMultiuserMode()) {
 
             return new ResponseEntity(userService.register(request), HttpStatus.OK);
 
-        } else return new ResponseEntity(HttpStatus.OK);
+        } else return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
 
 
     @ResponseBody
     @PostMapping("/restore")
-    public ResponseEntity restore(@RequestBody EmailRestoreRequest request) {
+    public ResponseEntity<Result> restore(@RequestBody EmailRestoreRequest request) {
 
         return ResponseEntity.ok(userService.restore(request));
 
     }
 
     @PostMapping("/password")
-    public ResponseEntity changePassword(@RequestBody ChangePasswordRequest request) {
+    public ResponseEntity<Result> changePassword(@RequestBody ChangePasswordRequest request) {
 
         return ResponseEntity.ok(userService.changePassword(request));
     }
 
     @GetMapping("/logout")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity logout() {
+    public ResponseEntity<Result> logout() {
 
         SecurityContextHolder.getContext().setAuthentication(null);
 

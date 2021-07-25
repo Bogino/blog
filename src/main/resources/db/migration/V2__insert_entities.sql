@@ -61,7 +61,7 @@ insert into post_votes (post_id, time_vote, value, user_id) values(1, CURRENT_DA
 (20, CURRENT_DATE, 1, 13), (20, CURRENT_DATE, 1, 14), (20, CURRENT_DATE, 1, 15), (20, CURRENT_DATE, 1, 16);
 
 
-insert into global_settings (code, name, value) values("YES", "YES", "YES");
+insert into global_settings (code, name, value) values("MULTIUSER_MODE", "Многопользовательский режим", "YES"), ("POST_PREMODERATION", "Премодерация постов", "YES"), ("STATISTICS_IS_PUBLIC", "Показывать всем статистику блога", "YES") ;
 
 insert into captcha_codes (code, secret_code, captcha_time) values("qweewwwdr", "dsdsdwe3dgrdgdgfdrrfdvs3", "2021-12-11 12:34:45"),
 ("qwer", "dsdsdwe3dfdvs3", "2021-05-16 16:32:45"), ("gregrdgfdvdgrdg", "dsrdgdbdbdrdsdwe3dfdvs3", "2021-05-16 17:34:45"),

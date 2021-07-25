@@ -3,10 +3,8 @@ package main.controller;
 import main.api.request.AddCommentRequest;
 import main.api.request.PostModerationRequest;
 import main.api.request.ProfileRequest;
-import main.api.response.ApiCommentResponse;
-import main.api.response.InitResponse;
-import main.api.response.Result;
-import main.api.response.SettingsResponse;
+import main.api.request.SettingsRequest;
+import main.api.response.*;
 import main.service.PostService;
 import main.service.SettingsService;
 import main.service.TagService;
@@ -54,11 +52,19 @@ public class ApiGeneralController {
 
     @GetMapping("/settings")
     public ResponseEntity<SettingsResponse> settings() {
-        return new ResponseEntity<>(settingsService.getGlobalSettings(), HttpStatus.OK);
+        return new ResponseEntity<>(settingsService.getSettingsResponse(), HttpStatus.OK);
+    }
+
+    @PutMapping("/settings")
+    @PreAuthorize("hasAuthority('user:moderate')")
+    public void setSettings(@RequestBody SettingsRequest request) {
+
+        settingsService.setGlobalSettings(request.isMultiuserMode(), request.isPostPremoderation(), request.isStatisticsIsPublic());
+
     }
 
     @GetMapping("/tag")
-    public ResponseEntity getTags() {
+    public ResponseEntity<ApiTagResponse> getTags() {
 
         return new ResponseEntity(tagService.getTags(), HttpStatus.OK);
     }
@@ -68,7 +74,7 @@ public class ApiGeneralController {
             value = "/tag",
             params = "query",
             method = GET)
-    public ResponseEntity getTagsByQuery(String query) {
+    public ResponseEntity<ApiTagResponse> getTagsByQuery(String query) {
 
         return new ResponseEntity(tagService.getTagsByQuery(query), HttpStatus.OK);
     }
@@ -94,22 +100,33 @@ public class ApiGeneralController {
             value = "/calendar",
             params = "year",
             method = GET)
-    public ResponseEntity getCountPostsByYear(String year) {
+    public ResponseEntity<ApiCalendarResponse> getCountPostsByYear(String year) {
 
 
         return new ResponseEntity(postService.getCountPostsByYear(year), HttpStatus.OK);
     }
 
     @GetMapping("/calendar")
-    public ResponseEntity getCountPostsForCurrentYear() {
+    public ResponseEntity<ApiCalendarResponse> getCountPostsForCurrentYear() {
 
         return ResponseEntity.ok(postService.getCountPostsForCurrentYear());
     }
 
     @GetMapping("statistics/all")
-    public ResponseEntity getStatistic() {
+    public ResponseEntity<ApiStatisticResponse> getStatistic() {
 
-        return new ResponseEntity(postService.getStatistic(), HttpStatus.OK);
+        if (!settingsService.getSettingsResponse().isStatisticsIsPublic()) {
+            return new ResponseEntity(HttpStatus.UNAUTHORIZED);
+        } else {
+            return new ResponseEntity(postService.getStatistic(), HttpStatus.OK);
+        }
+    }
+
+    @GetMapping("statistics/my")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity<ApiStatisticResponse> getMyStatistic() {
+
+        return new ResponseEntity(postService.getMyStatistic(), HttpStatus.OK);
     }
 
     @PostMapping("/comment")
@@ -122,7 +139,7 @@ public class ApiGeneralController {
 
     @PostMapping("/moderation")
     @PreAuthorize("hasAuthority('user:moderate')")
-    public ResponseEntity moderate(@RequestBody PostModerationRequest request) {
+    public ResponseEntity<Result> moderate(@RequestBody PostModerationRequest request) {
 
         return ResponseEntity.ok(postService.moderate(request));
 
@@ -130,7 +147,7 @@ public class ApiGeneralController {
 
     @PostMapping(value = "/profile/my", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity updateProfile(@RequestBody ProfileRequest request) {
+    public ResponseEntity<Result> updateProfile(@RequestBody ProfileRequest request) {
         return ResponseEntity.ok(userService.updateProfile(request.getEmail(), request.getName(),
                 request.getPassword(), request.getRemovePhoto()));
 

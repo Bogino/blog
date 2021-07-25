@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class PostService implements IPostService{
+public class PostService implements IPostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
@@ -94,7 +94,7 @@ public class PostService implements IPostService{
 
         for (PostComment pc : post.getComments()) {
             apiPostResponseById.addComment(pc.getId(),
-                    pc.getTime().toLocalTime().toEpochSecond(LocalDate.now(),ZoneOffset.UTC) / 1000,
+                    pc.getTime().toLocalTime().toEpochSecond(LocalDate.now(), ZoneOffset.UTC) / 1000,
                     pc.getText(), pc.getUserId().getId(), pc.getUserId().getName(), pc.getUserId().getPhoto());
         }
 
@@ -116,10 +116,8 @@ public class PostService implements IPostService{
     public PostsListResponse getPostsByTag(String name, int offset, int limit) {
 
         int page = offset / limit;
-
         Pageable pageWithTenElements = PageRequest.of(page, limit);
         Page<Post> posts = postRepository.findByTagName(name, pageWithTenElements);
-        List<PostsListResponse.PostResponse> postsSingleResponse = new ArrayList<>();
 
         return getPostsList(posts);
 
@@ -160,7 +158,7 @@ public class PostService implements IPostService{
                 break;
         }
 
-        return getPostsList(Optional.of(posts).orElseThrow(()->new PostNotFoundException("Увы, посты не найдены")));
+        return getPostsList(Optional.of(posts).orElseThrow(() -> new PostNotFoundException("Увы, посты не найдены")));
 
     }
 
@@ -182,14 +180,13 @@ public class PostService implements IPostService{
             date = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
         }
 
-        if (settingsService.getGlobalSettings().isPostPremoderation()) {
-            post.setStatus(ModerationStatus.valueOf("NEW"));
+        post.setTime(date);
+        post.setIsActive(active);
+        if (settingsService.getSettingsResponse().isPostPremoderation()) {
+            post.setStatus(ModerationStatus.NEW);
         } else if (post.getIsActive() == 1) {
             post.setStatus(ModerationStatus.ACCEPTED);
         }
-
-        post.setTime(date);
-        post.setIsActive(active);
         post.setTitle(title);
         post.setText(text);
         post.setViewCount(0);
@@ -307,42 +304,33 @@ public class PostService implements IPostService{
     public ApiStatisticResponse getStatistic() {
 
         int postsCount = postRepository.getAllAcceptedPosts().size();
+
         ArrayList<Post> posts = postRepository.getAllAcceptedPosts();
 
-        int likesCount = 0;
-        int dislikesCount = 0;
-        int viewsCount = 0;
+        long firstPublication = postRepository.getEarlyPosts().orElse(null)
+                .get(0)
+                .getTime()
+                .toEpochSecond(ZoneOffset.UTC);
 
-        for (Post p : posts) {
+        ApiStatisticResponse apiStatisticResponse = new ApiStatisticResponse();
+        apiStatisticResponse.setPostsCount(postsCount);
+        apiStatisticResponse.setFirstPublication(firstPublication);
 
-            viewsCount += p.getViewCount();
-            List<PostVote> postVotes = postVoteRepository.findByPost(p);
-
-            for (PostVote pv : postVotes) {
-                if (pv.getValue() < 0) {
-                    dislikesCount++;
-                } else likesCount++;
-            }
+        if (posts.size() > 0) {
+            countVoteAndViews(posts, apiStatisticResponse);
         }
 
-        Page<Post> earlyPosts = postRepository.getActivePosts("ACCEPTED", PageRequest.of(0, 1, Sort.by("time").ascending()));
-        long firstPublication = earlyPosts.iterator().next().getTime().getSecond();
-        ApiStatisticResponse apiStatisticResponse = new ApiStatisticResponse(postsCount, likesCount, dislikesCount, viewsCount, firstPublication);
+        if (settingsService.getSettingsResponse().isStatisticsIsPublic()) {
 
-        if (settingsService.getGlobalSettings().isStatisticsIsPublic()) {
             return apiStatisticResponse;
+
         } else {
-
-            UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
-            if (user.getIsModerator() == 1) {
-
+            if (isUserAuthenticated() && isModerator())
                 return apiStatisticResponse;
-            }
         }
-
-        return apiStatisticResponse;
+        return null;
     }
+
 
     @Transactional
     public ApiCommentResponse addComment(AddCommentRequest request) throws NullPointerCommentTextException {
@@ -452,6 +440,33 @@ public class PostService implements IPostService{
 
     }
 
+    @Override
+    public ApiStatisticResponse getMyStatistic() {
+
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        List<Post> posts = postRepository.findPostsByUserId(user.getId());
+
+        long firstPublication = 0L;
+        int postsCount = posts.size();
+
+        ApiStatisticResponse apiStatisticResponse = new ApiStatisticResponse();
+        apiStatisticResponse.setPostsCount(postsCount);
+
+        if (posts.size() > 0) {
+            firstPublication = posts
+                    .get(0)
+                    .getTime()
+                    .toEpochSecond(ZoneOffset.UTC);
+            countVoteAndViews(posts, apiStatisticResponse);
+            apiStatisticResponse.setFirstPublication(firstPublication);
+        }
+
+        return apiStatisticResponse;
+
+    }
+
     private Map<String, String> checkErrors(String title, String text) {
 
         Map<String, String> errors = new HashMap<>();
@@ -495,6 +510,38 @@ public class PostService implements IPostService{
                 .getAuthentication()
                 .getAuthorities()
                 .contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"));
+    }
+
+    private boolean isModerator() {
+
+        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+
+        return user.getIsModerator() == 1;
+
+    }
+
+    private void countVoteAndViews(List<Post> posts, ApiStatisticResponse response) {
+
+        int likesCount = 0;
+        int dislikesCount = 0;
+        int viewsCount = 0;
+
+        for (Post p : posts) {
+
+            viewsCount += p.getViewCount();
+            List<PostVote> postVotes = postVoteRepository.findByPost(p);
+
+            for (PostVote pv : postVotes) {
+                if (pv.getValue() < 0) {
+                    dislikesCount++;
+                } else likesCount++;
+            }
+        }
+
+        response.setDislikesCount(dislikesCount);
+        response.setLikesCount(likesCount);
+        response.setViewsCount(viewsCount);
     }
 
 

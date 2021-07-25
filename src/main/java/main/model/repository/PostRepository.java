@@ -67,6 +67,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query(value = "SELECT * FROM posts WHERE id = ?1 AND is_active = 1", nativeQuery = true)
     Optional<Post> findByPostId(int postId);
 
+    @Query(value = "SELECT * FROM posts WHERE user_id = ?1 AND is_active = 1 AND moderation_status = 'ACCEPTED' ORDER BY time_post ASC", nativeQuery = true)
+    List<Post> findPostsByUserId(int userId);
 
     @Query(value = "SELECT * FROM posts\n" +
             "JOIN post_comments ON posts.id = post_comments.post_id\n" +
@@ -87,4 +89,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "GROUP BY post_votes.post_id\n" +
             "ORDER BY count(*) DESC", nativeQuery = true)
     Page<Post> getBestPosts(Pageable pageable);
+
+    @Query(value = "SELECT * FROM posts WHERE moderation_status = 'ACCEPTED' ORDER BY time_post ASC", nativeQuery = true)
+    Optional<List<Post>> getEarlyPosts();
 }

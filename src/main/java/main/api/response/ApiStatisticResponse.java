@@ -12,4 +12,10 @@ public class ApiStatisticResponse {
     private int dislikesCount;
     private int viewsCount;
     private long firstPublication;
+
+    public ApiStatisticResponse(){}
+
+
+
 }
+
