@@ -49,6 +49,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query(value = "SELECT * FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time_post <= NOW()", nativeQuery = true)
     ArrayList<Post> getAllAcceptedPosts();
 
+    @Query(value = "SELECT COUNT(*) FROM posts WHERE IS_ACTIVE = 1 AND moderation_status = 'ACCEPTED' AND time_post <= NOW()", nativeQuery = true)
+    int getCountAcceptedPosts();
+
     @Query(value = "SELECT time_post FROM posts WHERE YEAR(time_post) = ?1 AND moderation_status = 'ACCEPTED' AND time_post <= NOW()", nativeQuery = true)
     ArrayList<Date> getDatesByYear(String year);
 

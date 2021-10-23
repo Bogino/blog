@@ -235,7 +235,7 @@ public class UserService implements IUserService {
                     "\\\"/auth/restore\\\">Запросить ссылку снова</a>");
         }
 
-        if (!captcha.getCode().equals(request.getCode())) {
+        if (!captcha.getCode().trim().equals(request.getCaptcha().trim())) {
             response.getErrors().put("captcha", "Пароль с картинки введен неверно");
         }
 

@@ -27,13 +27,9 @@ public class ApiGeneralController {
 
 
     private final SettingsService settingsService;
-
     private final TagService tagService;
-
     private final InitResponse initResponse;
-
     private final PostService postService;
-
     private final UserService userService;
 
 
@@ -82,7 +78,6 @@ public class ApiGeneralController {
     @PostMapping(value = "/image")
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<String> uploadImage(MultipartFile image) {
-
 
         return ResponseEntity.ok("\\" + userService.uploadImage(image));
 

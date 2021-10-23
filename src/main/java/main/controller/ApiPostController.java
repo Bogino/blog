@@ -3,6 +3,7 @@ package main.controller;
 import main.api.request.AddPostRequest;
 import main.api.request.EditPostRequest;
 import main.api.request.VoteRequest;
+import main.api.response.PostsListResponse;
 import main.service.PostService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,9 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/post")
 public class ApiPostController {
 
-
     private final PostService postService;
-
 
     public ApiPostController(PostService postService) {
         this.postService = postService;
@@ -23,7 +22,7 @@ public class ApiPostController {
 
 
     @GetMapping("")
-    public ResponseEntity getPosts(
+    public ResponseEntity<PostsListResponse> getPosts(
             @RequestParam(required = false, defaultValue = "recent") String mode,
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
@@ -32,16 +31,15 @@ public class ApiPostController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity getPostsByQuery(
+    public ResponseEntity<PostsListResponse> getPostsByQuery(
             @RequestParam() String query,
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
-
         return new ResponseEntity(postService.getPostsByQuery(query, offset, limit), HttpStatus.OK);
     }
 
     @GetMapping("/byDate")
-    public ResponseEntity getPostsByDate(
+    public ResponseEntity<PostsListResponse> getPostsByDate(
             @RequestParam("time") String date,
             @RequestParam(required = false, defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "10") int limit) {
