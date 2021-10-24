@@ -73,9 +73,7 @@ public class TagService implements ITagService {
         ApiTagResponse apiTagResponse = new ApiTagResponse();
 
         for (Tag tag : tags) {
-
             apiTagResponse.addTag(tag.getName(), postRepository.getCountPostsByTagName(tag.getName()) / totalPosts * factor);
-
         }
 
         return apiTagResponse;

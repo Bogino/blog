@@ -2,7 +2,6 @@ package main.service;
 
 import com.github.cage.Cage;
 import com.github.cage.GCage;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import main.api.mail.MyConstants;
 import main.api.request.ChangePasswordRequest;
@@ -37,11 +36,12 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
-import java.util.*;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 @Service
@@ -101,7 +101,7 @@ public class UserService implements IUserService {
         byte[] array = new byte[256];
         new Random().nextBytes(array);
         String randomString = new String(array, StandardCharsets.UTF_8);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
 
         int n = 20;
@@ -136,15 +136,12 @@ public class UserService implements IUserService {
         if (!eMailPattern.matcher(request.getEmail()).matches()) {
             errorResponse.getErrors().put("email", "Некорректное имя e-mail");
         }
-
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             errorResponse.getErrors().put("email", "Этот e-mail уже зарегистрирован");
         }
-
         if (!passwordPattern.matcher(request.getPassword()).matches()) {
             errorResponse.getErrors().put("password", "Пароль короче 6-ти символов");
         }
-
         if (!namePattern.matcher(request.getName()).matches()) {
             errorResponse.getErrors().put("name", "Имя содержит недопустимые символы");
         }
@@ -154,7 +151,6 @@ public class UserService implements IUserService {
         if (!captchaCode.getCode().equals(request.getCaptcha())) {
             errorResponse.getErrors().put("captcha", "Код с картинки введён неверно");
         }
-
         if (errorResponse.getErrors().size() > 0) {
             return errorResponse;
         }
@@ -198,7 +194,7 @@ public class UserService implements IUserService {
         new Random().nextBytes(array);
 
         String randomString = new String(array, StandardCharsets.UTF_8);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
 
         int n = 20;
@@ -213,7 +209,7 @@ public class UserService implements IUserService {
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow();
         user.setCode(sb.toString());
         userRepository.save(user);
-        message.setText("/login/change-password/" + sb.toString());
+        message.setText("http://localhost:8080/login/change-password/" + sb.toString());
 
         this.emailSender.send(message);
 
@@ -234,16 +230,12 @@ public class UserService implements IUserService {
                     "<a href=\n" +
                     "\\\"/auth/restore\\\">Запросить ссылку снова</a>");
         }
-
         if (!captcha.getCode().trim().equals(request.getCaptcha().trim())) {
             response.getErrors().put("captcha", "Пароль с картинки введен неверно");
         }
-
-
         if (request.getPassword().length() < 6) {
             response.getErrors().put("password", "Пароль короче 6 символов");
         }
-
         if (response.getErrors().size() != 0) {
             return response;
         }
@@ -261,26 +253,21 @@ public class UserService implements IUserService {
                                 String name,
                                 String password,
                                 int removePhoto) {
-
         UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
 
         if (email != null) {
             user.setEmail(email);
         }
-
         if (name != null) {
             user.setName(name);
         }
-
         if (password != null) {
             user.setPassword(passwordEncoder.encode(password));
         }
-
         if (removePhoto == 1) {
             user.setPhoto(null);
         }
-
         userRepository.save(user);
 
         return new Result(true);
@@ -316,15 +303,12 @@ public class UserService implements IUserService {
         if (email != null) {
             user.setEmail(email);
         }
-
         if (name != null) {
             user.setName(name);
         }
-
         if (password != null) {
             user.setPassword(passwordEncoder.encode(password));
         }
-
         if (removePhoto != 0) {
             user.setPhoto(null);
         }
@@ -342,7 +326,7 @@ public class UserService implements IUserService {
             byte[] array = new byte[256];
             new Random().nextBytes(array);
             String randomString = new String(array, StandardCharsets.UTF_8);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
 
             int n = 6;
@@ -374,7 +358,7 @@ public class UserService implements IUserService {
             byte[] array = new byte[256];
             new Random().nextBytes(array);
             String randomString = new String(array, StandardCharsets.UTF_8);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             String AlphaNumericString = randomString.replaceAll("[^A-Za-z0-9]", "");
 
             int n = 6;

@@ -15,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -171,7 +170,7 @@ public class PostService implements IPostService {
             return new ErrorResponse(false, errors);
         }
         Post post = new Post();
-        Result result = fillPost(post, timestamp,  active, title, tags, text);
+        Result result = fillPost(post, timestamp, active, title, tags, text);
 
         postRepository.save(post);
 
@@ -340,7 +339,7 @@ public class PostService implements IPostService {
         ArrayList<Post> posts = postRepository.getAllAcceptedPosts();
         int postsCount = posts.size();
 
-        posts.sort( Comparator.comparing(post -> post.getTime().toEpochSecond(ZoneOffset.UTC)));
+        posts.sort(Comparator.comparing(post -> post.getTime().toEpochSecond(ZoneOffset.UTC)));
 
         long firstPublication = posts.get(0).getTime().toEpochSecond(ZoneOffset.UTC);
 
@@ -455,7 +454,8 @@ public class PostService implements IPostService {
             likesCount.addAndGet((int) post.getVotes().stream().filter(v -> v.getValue() > 0).count());
             dislikesCount.addAndGet((int) post.getVotes().stream().filter(v -> v.getValue() < 0).count());
 
-        }).forEach(post -> {});
+        }).forEach(post -> {
+        });
 
         response.setDislikesCount(dislikesCount.get());
         response.setLikesCount(likesCount.get());
